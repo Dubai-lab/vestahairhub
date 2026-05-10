@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AFRICAN_COUNTRIES } from '@/lib/currencies'
+import { AFRICAN_COUNTRIES, flagUrl } from '@/lib/currencies'
 import { useCountryStore }   from '@/store/countryStore'
 
 export function CountryPicker() {
@@ -33,7 +33,10 @@ export function CountryPicker() {
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm text-white/80 hover:text-white glass hover:glass-dark transition-all border border-white/8"
       >
-        <span className="text-base leading-none">{active?.flag ?? '🌍'}</span>
+        {active
+          ? <img src={flagUrl(active.code)} alt={active.name} className="w-5 h-3.5 object-cover rounded-sm flex-shrink-0" />
+          : <span className="text-base leading-none">🌍</span>
+        }
         <span className="hidden sm:inline max-w-[80px] truncate text-xs">
           {active?.name ?? 'All'}
         </span>
@@ -73,7 +76,7 @@ export function CountryPicker() {
                   : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
             >
-              <span className="text-base w-6 text-center">🌍</span>
+              <span className="w-5 text-center text-base">🌍</span>
               <span>All Countries</span>
             </button>
 
@@ -95,7 +98,11 @@ export function CountryPicker() {
                         : 'text-white/70 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <span className="text-base w-6 flex-shrink-0 text-center">{c.flag}</span>
+                    <img
+                      src={flagUrl(c.code)}
+                      alt={c.name}
+                      className="w-5 h-3.5 object-cover rounded-sm flex-shrink-0"
+                    />
                     <span className="truncate">{c.name}</span>
                   </button>
                 ))
