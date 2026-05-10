@@ -14,7 +14,12 @@ const fadeUp = {
 }
 
 const TRUSTS = [
-  '🇳🇬 Nigeria', '🇬🇭 Ghana', '🇰🇪 Kenya', '🇿🇦 South Africa', '🇸🇳 Senegal', '🇪🇹 Ethiopia',
+  { name: 'Nigeria',  code: 'ng' },
+  { name: 'Ghana',    code: 'gh' },
+  { name: 'Kenya',    code: 'ke' },
+  { name: 'Liberia',  code: 'lr' },
+  { name: 'Senegal',  code: 'sn' },
+  { name: 'Ethiopia', code: 'et' },
 ]
 
 export function HeroSection() {
@@ -88,8 +93,13 @@ export function HeroSection() {
         {/* Trust flags */}
         <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-2 mt-4">
           {TRUSTS.map((t) => (
-            <span key={t} className="px-3 py-1 rounded-full glass text-xs text-white/50 border border-white/5">
-              {t}
+            <span key={t.name} className="flex items-center gap-1.5 px-3 py-1 rounded-full glass text-xs text-white/50 border border-white/5">
+              <img
+                src={`https://flagcdn.com/w40/${t.code}.png`}
+                alt={t.name}
+                className="w-4 h-3 object-cover rounded-sm"
+              />
+              {t.name}
             </span>
           ))}
         </motion.div>
