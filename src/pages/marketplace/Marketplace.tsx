@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, Link } from 'react-router-dom'
-import { Search, Globe } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { supabase }   from '@/lib/supabase'
-import { Spinner }    from '@/components/ui/Spinner'
-import { formatPrice, AFRICAN_COUNTRIES } from '@/lib/currencies'
+import { supabase }          from '@/lib/supabase'
+import { Spinner }           from '@/components/ui/Spinner'
+import { formatPrice }       from '@/lib/currencies'
+import { useCountryStore }   from '@/store/countryStore'
 import type { Product, Category } from '@/types'
 
 type ProductWithShop = Product & {
@@ -16,7 +17,7 @@ export default function Marketplace() {
   const [search, setSearch]         = useSearchParams()
   const [searchTerm, setSearchTerm] = useState(search.get('q') ?? '')
   const categorySlug                 = search.get('category') ?? ''
-  const selectedCountry              = search.get('country') ?? ''
+  const { selectedCountry, setCountry } = useCountryStore()
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -56,12 +57,6 @@ export default function Marketplace() {
     setSearch(search)
   }
 
-  const setCountry = (country: string) => {
-    if (country) search.set('country', country)
-    else search.delete('country')
-    setSearch(search)
-  }
-
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
 
@@ -71,9 +66,9 @@ export default function Marketplace() {
         <p className="text-white/50">Browse authentic African beauty products from trusted sellers</p>
       </div>
 
-      {/* Search + Country filter */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <form onSubmit={handleSearch} className="flex-1 relative">
+      {/* Search */}
+      <div className="mb-6">
+        <form onSubmit={handleSearch} className="relative max-w-xl">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             value={searchTerm}
@@ -82,23 +77,6 @@ export default function Marketplace() {
             className="w-full pl-11 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
           />
         </form>
-
-        {/* Country selector */}
-        <div className="relative flex-shrink-0">
-          <Globe size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
-          <select
-            value={selectedCountry}
-            onChange={e => setCountry(e.target.value)}
-            aria-label="Filter by country"
-            title="Filter by country"
-            className="pl-9 pr-8 py-3 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none cursor-pointer hover:border-white/20 transition-colors min-w-[160px]"
-          >
-            <option value="" className="bg-space-900">All Countries</option>
-            {AFRICAN_COUNTRIES.map(c => (
-              <option key={c} value={c} className="bg-space-900">{c}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {/* Active country badge */}
@@ -107,7 +85,7 @@ export default function Marketplace() {
           <span className="text-xs text-white/50">Showing shops from</span>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs font-medium">
             {selectedCountry}
-            <button type="button" onClick={() => setCountry('')} className="hover:text-white transition-colors ml-0.5">×</button>
+            <button type="button" onClick={() => setCountry('')} className="hover:text-white transition-colors ml-0.5" aria-label="Clear country filter">×</button>
           </span>
         </div>
       )}

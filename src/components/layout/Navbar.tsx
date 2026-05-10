@@ -2,18 +2,19 @@ import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Menu, X, User, LogOut, LayoutDashboard, ChevronDown, MessageSquare } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth }      from '@/context/AuthContext'
-import { useCartStore } from '@/store/cartStore'
-import { Button }       from '@/components/ui/Button'
-import logoSrc          from '@images/logo.png'
+import { useAuth }        from '@/context/AuthContext'
+import { useCartStore }   from '@/store/cartStore'
+import { Button }         from '@/components/ui/Button'
+import { CountryPicker }  from '@/components/ui/CountryPicker'
+import logoSrc            from '@images/logo.png'
 
 export function Navbar() {
   const { user, profile, role, isLoading, signOut } = useAuth()
   const totalItems = useCartStore((s) => s.totalItems())
   const navigate   = useNavigate()
 
-  const [scrolled,    setScrolled]    = useState(false)
-  const [mobileOpen,  setMobileOpen]  = useState(false)
+  const [scrolled,     setScrolled]     = useState(false)
+  const [mobileOpen,   setMobileOpen]   = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function Navbar() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
 
         {/* Logo */}
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="flex items-center flex-shrink-0">
           <img src={logoSrc} alt="VestaHairHub" className="h-10 w-auto" />
         </Link>
 
@@ -64,7 +65,13 @@ export function Navbar() {
         </ul>
 
         {/* Right actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+
+          {/* Country picker — desktop */}
+          <div className="hidden lg:block">
+            <CountryPicker />
+          </div>
+
           {/* Messages icon (logged-in only) */}
           {user && (
             <Link to="/messages" className="p-2 text-white/70 hover:text-white transition-colors">
@@ -86,6 +93,7 @@ export function Navbar() {
             /* User menu */
             <div className="relative hidden lg:block">
               <button
+                type="button"
                 onClick={() => setUserMenuOpen((v) => !v)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-white/80 hover:text-white glass hover:glass-dark transition-all"
               >
@@ -126,6 +134,7 @@ export function Navbar() {
                     </Link>
                     <hr className="border-white/5 mx-3" />
                     <button
+                      type="button"
                       onClick={() => { signOut(); setUserMenuOpen(false); navigate('/') }}
                       className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                     >
@@ -148,6 +157,7 @@ export function Navbar() {
 
           {/* Mobile hamburger */}
           <button
+            type="button"
             onClick={() => setMobileOpen((v) => !v)}
             className="lg:hidden p-2 text-white/70 hover:text-white transition-colors"
           >
@@ -166,6 +176,15 @@ export function Navbar() {
             className="lg:hidden glass-dark border-t border-white/5 overflow-hidden"
           >
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-2">
+
+              {/* Country picker — mobile */}
+              <div className="px-1 pb-1">
+                <p className="text-xs text-white/30 mb-2 px-3">Filter by country</p>
+                <CountryPicker />
+              </div>
+
+              <hr className="border-white/5" />
+
               {navLinks.map((link) => (
                 <NavLink
                   key={link.to}
@@ -180,21 +199,30 @@ export function Navbar() {
                   {link.label}
                 </NavLink>
               ))}
+
               <hr className="border-white/5 my-1" />
+
               {user ? (
                 <>
                   {(role === 'seller' || role === 'admin') && (
-                    <Link to={role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
+                    <Link to={role === 'admin' ? '/admin' : '/dashboard'} onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
                       <LayoutDashboard size={15} /> {role === 'admin' ? 'Admin Panel' : 'Dashboard'}
                     </Link>
                   )}
-                  <Link to="/messages" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
+                  <Link to="/messages" onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
                     <MessageSquare size={15} /> Messages
                   </Link>
-                  <Link to="/account" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
+                  <Link to="/account" onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl">
                     <User size={15} /> My Account
                   </Link>
-                  <button onClick={() => { signOut(); setMobileOpen(false); navigate('/') }} className="flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => { signOut(); setMobileOpen(false); navigate('/') }}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+                  >
                     <LogOut size={15} /> Sign Out
                   </button>
                 </>

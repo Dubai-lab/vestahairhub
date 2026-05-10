@@ -113,7 +113,7 @@ export default function ShopSettings() {
             >
               <option value="" className="bg-space-900">Select country…</option>
               {AFRICAN_COUNTRIES.map(c => (
-                <option key={c} value={c} className="bg-space-900">{c}</option>
+                <option key={c.name} value={c.name} className="bg-space-900">{c.flag} {c.name}</option>
               ))}
             </select>
           </div>
