@@ -95,6 +95,7 @@ export type Database = {
           country:     string | null
           city:             string | null
           whatsapp_number:  string | null
+          currency:         string
           status:           string
           created_at:       string
           updated_at:       string
@@ -111,6 +112,7 @@ export type Database = {
           country?:         string | null
           city?:            string | null
           whatsapp_number?: string | null
+          currency?:        string
           status?:          string
           created_at?:      string
           updated_at?:      string
@@ -125,6 +127,7 @@ export type Database = {
           country?:         string | null
           city?:            string | null
           whatsapp_number?: string | null
+          currency?:        string
           status?:          string
           updated_at?:      string
         }

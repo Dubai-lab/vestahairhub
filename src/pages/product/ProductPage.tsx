@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Store, Star, Play, ChevronLeft, ChevronRight, ZoomIn, MessageCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase }        from '@/lib/supabase'
+import { formatPrice }     from '@/lib/currencies'
 import { useCartStore }    from '@/store/cartStore'
 import { Button }          from '@/components/ui/Button'
 import { Badge }           from '@/components/ui/Badge'
@@ -215,10 +216,10 @@ export default function ProductPage() {
 
           {/* Price */}
           <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-4xl font-bold text-brand-400">₦{product.price.toLocaleString()}</span>
+            <span className="text-4xl font-bold text-brand-400">{formatPrice(product.price, product.shops?.currency)}</span>
             {product.compare_price && (
               <>
-                <span className="text-white/30 text-xl line-through">₦{product.compare_price.toLocaleString()}</span>
+                <span className="text-white/30 text-xl line-through">{formatPrice(product.compare_price, product.shops?.currency)}</span>
                 <Badge variant="red">{discount}% OFF</Badge>
               </>
             )}

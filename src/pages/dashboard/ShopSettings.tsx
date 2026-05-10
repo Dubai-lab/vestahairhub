@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Save, MessageCircle } from 'lucide-react'
+import { Save, MessageCircle, DollarSign } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { supabase }   from '@/lib/supabase'
-import { useAuth }    from '@/context/AuthContext'
-import { Button }     from '@/components/ui/Button'
-import { Input }      from '@/components/ui/Input'
-import { Spinner }    from '@/components/ui/Spinner'
+import { supabase }           from '@/lib/supabase'
+import { useAuth }            from '@/context/AuthContext'
+import { Button }             from '@/components/ui/Button'
+import { Input }              from '@/components/ui/Input'
+import { Spinner }            from '@/components/ui/Spinner'
+import { AFRICAN_CURRENCIES, AFRICAN_COUNTRIES } from '@/lib/currencies'
 
 const schema = z.object({
   name:             z.string().min(2, 'Shop name must be at least 2 characters'),
@@ -17,6 +18,7 @@ const schema = z.object({
   description:      z.string().optional(),
   country:          z.string().optional(),
   city:             z.string().optional(),
+  currency:         z.string().default('USD'),
   theme_color:      z.string().optional(),
   whatsapp_number:  z.string().optional(),
 })
@@ -46,6 +48,7 @@ export default function ShopSettings() {
       description:     shop.description ?? '',
       country:         shop.country ?? '',
       city:            shop.city ?? '',
+      currency:        shop.currency ?? 'USD',
       theme_color:     shop.theme_color,
       whatsapp_number: shop.whatsapp_number ?? '',
     })
@@ -102,8 +105,36 @@ export default function ShopSettings() {
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input {...register('country')} label="Country" placeholder="e.g. Nigeria" />
-          <Input {...register('city')}    label="City"    placeholder="e.g. Lagos" />
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-white/70">Country</label>
+            <select
+              {...register('country')}
+              className="w-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-brand-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition-colors appearance-none"
+            >
+              <option value="" className="bg-space-900">Select country…</option>
+              {AFRICAN_COUNTRIES.map(c => (
+                <option key={c} value={c} className="bg-space-900">{c}</option>
+              ))}
+            </select>
+          </div>
+          <Input {...register('city')} label="City" placeholder="e.g. Lagos" />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-white/70 flex items-center gap-2">
+            <DollarSign size={14} className="text-brand-400" /> Shop Currency
+          </label>
+          <select
+            {...register('currency')}
+            className="w-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-brand-500 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition-colors appearance-none"
+          >
+            {AFRICAN_CURRENCIES.map(c => (
+              <option key={c.code} value={c.code} className="bg-space-900">
+                {c.symbol} — {c.name} ({c.code})
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-white/25">This currency will show on all your product prices in the marketplace.</p>
         </div>
 
         <div className="space-y-1.5">
