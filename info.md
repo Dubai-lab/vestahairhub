@@ -1,0 +1,3 @@
+supabase url= https://shbgmjzrxpkydpznnuci.supabase.co
+
+supabase public anon key = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoYmdtanpyeHBreWRwem5udWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MTI4NjQsImV4cCI6MjA5Mzk4ODg2NH0.5Nv07ZR45ScBODk98csHo6vR7a-xq9Gic15OnLgbUM8
