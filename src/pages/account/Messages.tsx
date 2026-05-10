@@ -105,6 +105,7 @@ export default function BuyerMessages() {
     const tempMsg: MsgWithSender = {
       id: `temp-${Date.now()}`, conversation_id: activeConvId,
       sender_id: user.id, content, is_read: false,
+      message_type: 'text', attachment_url: null, attachment_meta: null,
       created_at: new Date().toISOString(),
       sender: { full_name: profile?.full_name ?? 'You' },
     }

@@ -74,7 +74,7 @@ export default function ShopPage() {
   const isSelfShop  = user?.id === shop.seller_id
 
   function openChat() {
-    const params = new URLSearchParams({ seller: shop.seller_id, shop: shop.id })
+    const params = new URLSearchParams({ seller: shop!.seller_id, shop: shop!.id })
     navigate(`/messages?${params.toString()}`)
   }
 
