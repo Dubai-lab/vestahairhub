@@ -161,7 +161,7 @@ export default function SupportPage() {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
-          <a href="mailto:support@vestahairhub.com"
+          <a href="mailto:eg8217178@gmail.com"
             className="glass-dark rounded-2xl border border-white/5 hover:border-brand-500/30 p-6 flex gap-4 items-start transition-all hover:-translate-y-0.5 duration-300">
             <div className="w-11 h-11 rounded-xl bg-brand-500/15 flex items-center justify-center flex-shrink-0">
               <Mail size={20} className="text-brand-400" />
@@ -169,11 +169,11 @@ export default function SupportPage() {
             <div>
               <p className="font-semibold text-white mb-0.5">Email Support</p>
               <p className="text-xs text-white/45 mb-2">We respond within 24 hours on business days.</p>
-              <p className="text-sm text-brand-400 font-medium">support@vestahairhub.com</p>
+              <p className="text-sm text-brand-400 font-medium">eg8217178@gmail.com</p>
             </div>
           </a>
 
-          <a href="https://wa.me/2348000000000?text=Hi%20VestaHairHub%20Support%2C%20I%20need%20help%20with..."
+          <a href="https://wa.me/250799354618?text=Hi%20VestaHairHub%20Support%2C%20I%20need%20help%20with..."
             target="_blank" rel="noopener noreferrer"
             className="glass-dark rounded-2xl border border-white/5 hover:border-green-500/30 p-6 flex gap-4 items-start transition-all hover:-translate-y-0.5 duration-300">
             <div className="w-11 h-11 rounded-xl bg-green-500/15 flex items-center justify-center flex-shrink-0">
@@ -229,8 +229,8 @@ export default function SupportPage() {
             <p className="text-white/60 text-sm mb-3">Didn't find what you were looking for?</p>
             <p className="text-white/40 text-xs">
               Email us at{' '}
-              <a href="mailto:support@vestahairhub.com" className="text-brand-400 hover:text-brand-300 transition-colors">
-                support@vestahairhub.com
+              <a href="mailto:eg8217178@gmail.com" className="text-brand-400 hover:text-brand-300 transition-colors">
+                eg8217178@gmail.com
               </a>
               {' '}or check our{' '}
               <Link to="/terms" className="text-brand-400 hover:text-brand-300 transition-colors">Terms of Service</Link>
