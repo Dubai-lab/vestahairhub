@@ -143,7 +143,7 @@ export default function ProductPage() {
         .eq('id', id!)
         .maybeSingle()
       return data as (Product & {
-        shops:      { id: string; name: string; slug: string; seller_id: string; whatsapp_number: string | null } | null
+        shops:      { id: string; name: string; slug: string; seller_id: string; whatsapp_number: string | null; currency: string } | null
         categories: { name: string } | null
       }) | null
     },
