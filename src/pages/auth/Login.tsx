@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { supabase }   from '@/lib/supabase'
 import { Button }     from '@/components/ui/Button'
@@ -54,6 +54,15 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="glass-dark rounded-3xl p-8 sm:p-10">
+            {/* Back button */}
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 text-sm text-white/40 hover:text-white/80 transition-colors mb-6"
+            >
+              <ArrowLeft size={16} /> Back
+            </button>
+
             {/* Logo */}
             <div className="flex justify-center mb-8">
               <Link to="/">
