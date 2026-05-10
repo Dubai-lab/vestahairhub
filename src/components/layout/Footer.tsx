@@ -77,12 +77,15 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-white mb-4">Company</h4>
             <ul className="space-y-2.5">
               {[
-                'About Us', 'Privacy Policy', 'Terms of Service', 'Support',
+                { label: 'About Us',         to: '/about' },
+                { label: 'Privacy Policy',   to: '/privacy' },
+                { label: 'Terms of Service', to: '/terms' },
+                { label: 'Support',          to: '/support' },
               ].map((l) => (
-                <li key={l}>
-                  <span className="text-sm text-white/50 hover:text-brand-400 transition-colors cursor-pointer">
-                    {l}
-                  </span>
+                <li key={l.to}>
+                  <Link to={l.to} className="text-sm text-white/50 hover:text-brand-400 transition-colors">
+                    {l.label}
+                  </Link>
                 </li>
               ))}
             </ul>
