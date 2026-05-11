@@ -317,8 +317,17 @@ function Step2({ kyc, userId, onNext, onBack }: {
           {uploadSlots.map(({ side, label, ref, path }) => (
             <div key={side}>
               <label className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-1.5 block">{label}</label>
-              <input ref={ref} type="file" accept="image/*,.pdf" className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) uploadDoc(f, side) }} />
+              <input ref={ref} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  if (!f.type.startsWith('image/')) {
+                    setErr('Only image files are accepted (JPG, PNG, WebP). PDF files cannot be reviewed by our team.')
+                    if (ref.current) ref.current.value = ''
+                    return
+                  }
+                  uploadDoc(f, side)
+                }} />
               <button
                 type="button"
                 onClick={() => ref.current?.click()}
@@ -338,6 +347,13 @@ function Step2({ kyc, userId, onNext, onBack }: {
             </div>
           ))}
         </div>
+      )}
+
+      {idType && (
+        <p className="text-xs text-white/30 flex items-center gap-1.5">
+          <AlertCircle size={11} className="shrink-0" />
+          JPG, PNG or WebP only — PDF files are not accepted.
+        </p>
       )}
 
       {err && <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle size={14} />{err}</p>}
@@ -360,24 +376,26 @@ function Step3({ kyc, userId, onNext, onBack, onRealtimeCapture }: {
   onBack: () => void
   onRealtimeCapture: (handler: () => void) => void
 }) {
-  const webcamRef           = useRef<Webcam>(null)
-  const [isMobile]          = useState(() => isMobileDevice())
-  const [captured,          setCaptured]  = useState(false)
-  const [selfieBlob,        setSelfieBlob]  = useState<Blob | null>(null)
-  const [selfiePreview,     setSelfiePreview] = useState<string | null>(null)
-  const [countdown,         setCountdown] = useState<number | null>(null)
-  const [uploading,         setUploading] = useState(false)
-  const [err,               setErr]       = useState('')
-  const [mobileCompleted,   setMobileCompleted] = useState(false)
+  const webcamRef = useRef<Webcam>(null)
+  const [isMobile]        = useState(() => isMobileDevice())
+  // Desktop: 'choose' → 'camera' or 'phone'. Mobile: starts at 'camera'.
+  const [captureMode, setCaptureMode] = useState<'choose' | 'camera' | 'phone'>(
+    () => isMobileDevice() ? 'camera' : 'choose'
+  )
+  const [captured,        setCaptured]      = useState(false)
+  const [selfieBlob,      setSelfieBlob]    = useState<Blob | null>(null)
+  const [selfiePreview,   setSelfiePreview] = useState<string | null>(null)
+  const [countdown,       setCountdown]     = useState<number | null>(null)
+  const [uploading,       setUploading]     = useState(false)
+  const [err,             setErr]           = useState('')
+  const [phoneCompleted,  setPhoneCompleted] = useState(false)
 
   const faceUrl = `${window.location.origin}/kyc/face?token=${kyc?.face_token ?? ''}`
 
-  // Register the handler that fires when mobile completes face capture via Realtime
   useEffect(() => {
-    onRealtimeCapture(() => setMobileCompleted(true))
+    onRealtimeCapture(() => setPhoneCompleted(true))
   }, [onRealtimeCapture])
 
-  // Countdown then capture
   useEffect(() => {
     if (countdown === null) return
     if (countdown <= 0) { doCapture(); return }
@@ -387,9 +405,8 @@ function Step3({ kyc, userId, onNext, onBack, onRealtimeCapture }: {
 
   const doCapture = useCallback(() => {
     const imgSrc = webcamRef.current?.getScreenshot({ width: 640, height: 480 })
-    if (!imgSrc) { setErr('Camera capture failed. Please try again.'); return }
-    const blob = base64ToBlob(imgSrc)
-    setSelfieBlob(blob)
+    if (!imgSrc) { setErr('Camera capture failed. Please allow camera access and try again.'); return }
+    setSelfieBlob(base64ToBlob(imgSrc))
     setSelfiePreview(imgSrc)
     setCaptured(true)
     setCountdown(null)
@@ -405,132 +422,150 @@ function Step3({ kyc, userId, onNext, onBack, onRealtimeCapture }: {
     await onNext({ selfie_path: path, face_captured_at: new Date().toISOString() })
   }
 
-  if (mobileCompleted) {
+  // Phone completed via Realtime
+  if (phoneCompleted) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
         <CheckCircle2 size={52} className="text-green-400" />
         <div>
           <h3 className="text-xl font-bold text-white">Face Captured!</h3>
-          <p className="text-white/50 mt-1 text-sm">Your selfie was captured on your mobile device.</p>
+          <p className="text-white/50 mt-1 text-sm">Your selfie was captured on your phone successfully.</p>
         </div>
-        <Button variant="primary" size="lg" rightIcon={<ChevronRight size={17} />}
-          onClick={() => onNext({})}>
+        <Button variant="primary" size="lg" rightIcon={<ChevronRight size={17} />} onClick={() => onNext({})}>
           Continue to Review
         </Button>
       </div>
     )
   }
 
+  /* ── Webcam UI (shared by mobile + desktop-camera mode) ── */
+  const WebcamCapture = (
+    <div className="space-y-4">
+      {!captured ? (
+        <>
+          <div className="relative rounded-2xl overflow-hidden bg-black">
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={{ facingMode: 'user', width: 640, height: 480 }}
+              className="w-full rounded-2xl"
+            />
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 640 480" preserveAspectRatio="none">
+              <defs>
+                <mask id="face-mask-kyc">
+                  <rect width="640" height="480" fill="white" />
+                  <ellipse cx="320" cy="240" rx="180" ry="220" fill="black" />
+                </mask>
+              </defs>
+              <rect width="640" height="480" fill="rgba(0,0,0,0.55)" mask="url(#face-mask-kyc)" />
+              <ellipse cx="320" cy="240" rx="180" ry="220" fill="none" stroke="#C8851A" strokeWidth="3" strokeDasharray="12,6" />
+            </svg>
+            {countdown !== null && countdown > 0 && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.span key={countdown} initial={{ scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                  className="text-8xl font-bold text-white drop-shadow-2xl">
+                  {countdown}
+                </motion.span>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-white/40 text-center">Good lighting · Face the camera · Remove glasses</p>
+          <Button variant="primary" size="lg" className="w-full" onClick={() => setCountdown(3)} disabled={countdown !== null}>
+            <Camera size={18} className="mr-2" />
+            {countdown !== null ? 'Preparing…' : 'Take Selfie'}
+          </Button>
+          {!isMobile && (
+            <button type="button" onClick={() => setCaptureMode('choose')}
+              className="w-full text-xs text-white/30 hover:text-white/60 transition-colors text-center py-1">
+              ← Back to options
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="relative rounded-2xl overflow-hidden">
+            <img src={selfiePreview!} alt="Selfie preview" className="w-full rounded-2xl" />
+            <div className="absolute top-3 right-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded-full">Captured ✓</div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => { setCaptured(false); setSelfieBlob(null); setSelfiePreview(null) }}>Retake</Button>
+            <Button variant="primary" className="flex-1" isLoading={uploading} rightIcon={<ChevronRight size={17} />} onClick={uploadAndNext}>
+              Use This Photo
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+
   return (
     <div className="space-y-5 max-w-lg">
       <div>
         <h2 className="text-xl font-bold text-white">Face Capture</h2>
-        <p className="text-white/40 text-sm mt-1">
-          {isMobile
-            ? 'Position your face in the oval guide and take a clear selfie.'
-            : 'Scan the QR code with your phone to complete the face capture step.'}
-        </p>
+        <p className="text-white/40 text-sm mt-1">We need a live selfie to verify your identity matches your ID document.</p>
       </div>
 
-      {isMobile ? (
-        /* ── Mobile: direct webcam ── */
-        <div className="space-y-4">
-          {!captured ? (
-            <>
-              <div className="relative rounded-2xl overflow-hidden bg-black">
-                <Webcam
-                  ref={webcamRef}
-                  audio={false}
-                  screenshotFormat="image/jpeg"
-                  videoConstraints={{ facingMode: 'user', width: 640, height: 480 }}
-                  className="w-full rounded-2xl"
-                />
-                {/* Oval overlay */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 640 480" preserveAspectRatio="none">
-                  <defs>
-                    <mask id="face-mask">
-                      <rect width="640" height="480" fill="white" />
-                      <ellipse cx="320" cy="240" rx="180" ry="220" fill="black" />
-                    </mask>
-                  </defs>
-                  <rect width="640" height="480" fill="rgba(0,0,0,0.55)" mask="url(#face-mask)" />
-                  <ellipse cx="320" cy="240" rx="180" ry="220" fill="none" stroke="#C8851A" strokeWidth="3" strokeDasharray="12,6" />
-                </svg>
-                {/* Countdown overlay */}
-                {countdown !== null && countdown > 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <motion.span
-                      key={countdown}
-                      initial={{ scale: 2, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.5, opacity: 0 }}
-                      className="text-8xl font-bold text-white drop-shadow-2xl"
-                    >
-                      {countdown}
-                    </motion.span>
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-white/40 text-center">Ensure good lighting · Face the camera · Remove glasses</p>
-              <Button variant="primary" size="lg" className="w-full"
-                onClick={() => setCountdown(3)} disabled={countdown !== null}>
-                <Camera size={18} className="mr-2" />
-                {countdown !== null ? 'Preparing…' : 'Take Selfie'}
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="relative rounded-2xl overflow-hidden">
-                <img src={selfiePreview!} alt="Selfie preview" className="w-full rounded-2xl" />
-                <div className="absolute top-3 right-3 bg-green-500/90 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  Captured ✓
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => { setCaptured(false); setSelfieBlob(null); setSelfiePreview(null) }}>
-                  Retake
-                </Button>
-                <Button variant="primary" className="flex-1" isLoading={uploading}
-                  rightIcon={<ChevronRight size={17} />} onClick={uploadAndNext}>
-                  Use This Photo
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      ) : (
-        /* ── Desktop: QR code ── */
-        <div className="space-y-6">
-          <div className="glass-dark rounded-2xl p-8 flex flex-col items-center gap-6 border border-brand-500/20">
-            <div className="w-12 h-12 rounded-xl bg-brand-500/15 border border-brand-500/30 flex items-center justify-center">
-              <Smartphone size={22} className="text-brand-400" />
-            </div>
-            <div className="text-center">
-              <p className="text-white font-semibold">Scan with your phone</p>
-              <p className="text-white/40 text-sm mt-1">Open the camera app and point it at this code</p>
-            </div>
-            <div className="p-4 bg-white rounded-2xl shadow-2xl">
-              <QRCodeSVG
-                value={faceUrl}
-                size={200}
-                level="M"
-                marginSize={2}
-              />
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
-              <Loader2 size={13} className="animate-spin" />
-              Waiting for mobile to complete…
-            </div>
-          </div>
+      <AnimatePresence mode="wait">
 
-          <div className="glass-dark rounded-xl p-4 border border-white/5">
-            <p className="text-xs text-white/40 leading-relaxed">
-              <strong className="text-white/60">How it works:</strong> Scan the QR code → log in if prompted →
-              take a selfie → this page will automatically advance when complete.
-            </p>
-          </div>
-        </div>
-      )}
+        {/* ── Desktop choice screen ── */}
+        {captureMode === 'choose' && (
+          <motion.div key="choose" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="space-y-4">
+            <p className="text-sm text-white/50">How would you like to take your selfie?</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* This computer */}
+              <button type="button" onClick={() => setCaptureMode('camera')}
+                className="glass-dark rounded-2xl p-6 border border-white/10 hover:border-brand-500/40 text-left transition-all group hover:-translate-y-0.5">
+                <div className="w-10 h-10 rounded-xl bg-brand-500/15 flex items-center justify-center mb-3">
+                  <Camera size={20} className="text-brand-400" />
+                </div>
+                <p className="text-sm font-semibold text-white">Use This Computer</p>
+                <p className="text-xs text-white/40 mt-1 leading-relaxed">Use your computer's built-in or external webcam</p>
+              </button>
+              {/* Phone QR */}
+              <button type="button" onClick={() => setCaptureMode('phone')}
+                className="glass-dark rounded-2xl p-6 border border-white/10 hover:border-brand-500/40 text-left transition-all group hover:-translate-y-0.5">
+                <div className="w-10 h-10 rounded-xl bg-brand-500/15 flex items-center justify-center mb-3">
+                  <Smartphone size={20} className="text-brand-400" />
+                </div>
+                <p className="text-sm font-semibold text-white">Use My Phone</p>
+                <p className="text-xs text-white/40 mt-1 leading-relaxed">Scan a QR code with your phone camera — no login needed</p>
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Camera (both mobile direct and desktop camera choice) ── */}
+        {captureMode === 'camera' && (
+          <motion.div key="camera" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            {WebcamCapture}
+          </motion.div>
+        )}
+
+        {/* ── Phone QR code ── */}
+        {captureMode === 'phone' && (
+          <motion.div key="phone" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="space-y-4">
+            <div className="glass-dark rounded-2xl p-8 flex flex-col items-center gap-5 border border-brand-500/20">
+              <p className="text-white font-semibold text-center">Scan with your phone camera</p>
+              <p className="text-white/40 text-xs text-center -mt-2">No login needed — just scan and take your selfie</p>
+              <div className="p-4 bg-white rounded-2xl shadow-2xl">
+                <QRCodeSVG value={faceUrl} size={200} level="M" marginSize={2} />
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
+                <Loader2 size={13} className="animate-spin" />
+                Waiting for your phone to complete…
+              </div>
+            </div>
+            <button type="button" onClick={() => setCaptureMode('choose')}
+              className="w-full text-xs text-white/30 hover:text-white/60 transition-colors text-center py-1">
+              ← Use computer camera instead
+            </button>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
 
       {err && <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle size={14} />{err}</p>}
 
