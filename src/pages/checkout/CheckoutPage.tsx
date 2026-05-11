@@ -5,9 +5,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { CheckCircle, Smartphone, Building2 } from 'lucide-react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { supabase }      from '@/lib/supabase'
-import { useAuth }       from '@/context/AuthContext'
-import { useCartStore }  from '@/store/cartStore'
+import { supabase }          from '@/lib/supabase'
+import { useAuth }           from '@/context/AuthContext'
+import { useCartStore }      from '@/store/cartStore'
+import { sendNotification }  from '@/lib/notify'
 import { Button }        from '@/components/ui/Button'
 import { Input }         from '@/components/ui/Input'
 import { Spinner }       from '@/components/ui/Spinner'
@@ -37,7 +38,7 @@ const METHOD_LABELS: Record<PaymentMethodType, string> = {
 }
 
 export default function CheckoutPage() {
-  const { user }    = useAuth()
+  const { user, profile } = useAuth()
   const navigate    = useNavigate()
   const { items, totalPrice, clearCart } = useCartStore()
   const [step, setStep] = useState<'details' | 'payment' | 'done'>('details')
@@ -109,6 +110,15 @@ export default function CheckoutPage() {
       setOrderId(id)
       clearCart()
       setStep('done')
+
+      // Notify seller + send buyer confirmation (fire-and-forget)
+      sendNotification({
+        type:         'order_placed',
+        order_id:     id,
+        shop_id:      shopId!,
+        total_amount: totalPrice(),
+        buyer_name:   profile?.full_name ?? user?.email?.split('@')[0] ?? 'Customer',
+      }).catch(() => {})
     },
   })
 

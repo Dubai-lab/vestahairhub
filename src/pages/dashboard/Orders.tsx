@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, Clock, Package, Truck, XCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { supabase }   from '@/lib/supabase'
-import { useAuth }    from '@/context/AuthContext'
+import { supabase }          from '@/lib/supabase'
+import { useAuth }           from '@/context/AuthContext'
+import { sendNotification }  from '@/lib/notify'
 import { Badge }      from '@/components/ui/Badge'
 import { Button }     from '@/components/ui/Button'
 import { Spinner }    from '@/components/ui/Spinner'
@@ -55,14 +56,40 @@ export default function Orders() {
     mutationFn: async ({ id, status }: { id: string; status: OrderStatus }) => {
       await supabase.from('orders').update({ status }).eq('id', id)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
+    onSuccess: (_data, variables) => {
+      // Notify the buyer about the status change
+      const order = orders.find((o) => o.id === variables.id)
+      if (order?.buyer_id) {
+        sendNotification({
+          type:        'order_status_changed',
+          order_id:    variables.id,
+          new_status:  variables.status,
+          buyer_id:    order.buyer_id,
+          buyer_name:  order.shipping_name ?? 'Customer',
+        }).catch(() => {})
+      }
+      qc.invalidateQueries({ queryKey: ['orders'] })
+    },
   })
 
   const cancel = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from('orders').update({ status: 'cancelled' }).eq('id', id)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['orders'] }),
+    onSuccess: (_data, id) => {
+      // Notify the buyer about cancellation
+      const order = orders.find((o) => o.id === id)
+      if (order?.buyer_id) {
+        sendNotification({
+          type:        'order_status_changed',
+          order_id:    id,
+          new_status:  'cancelled',
+          buyer_id:    order.buyer_id,
+          buyer_name:  order.shipping_name ?? 'Customer',
+        }).catch(() => {})
+      }
+      qc.invalidateQueries({ queryKey: ['orders'] })
+    },
   })
 
   return (

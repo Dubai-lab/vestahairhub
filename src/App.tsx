@@ -30,7 +30,8 @@ const AccountPage    = lazy(() => import('@/pages/account/AccountPage'))
 const MyOrders       = lazy(() => import('@/pages/account/MyOrders'))
 const ProfilePage    = lazy(() => import('@/pages/account/ProfilePage'))
 const SettingsPage   = lazy(() => import('@/pages/account/SettingsPage'))
-const MessagesPage   = lazy(() => import('@/pages/messages/MessagesPage'))
+const MessagesPage       = lazy(() => import('@/pages/messages/MessagesPage'))
+const NotificationsPage  = lazy(() => import('@/pages/notifications/NotificationsPage'))
 
 // ── Admin pages (require login + admin role) ──────────────────────────────────
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
@@ -82,6 +83,7 @@ export default function App() {
                 <Route path="account/profile"   element={<ProfilePage />} />
                 <Route path="account/settings"  element={<SettingsPage />} />
                 <Route path="messages"          element={<MessagesPage />} />
+                <Route path="notifications"    element={<NotificationsPage />} />
               </Route>
             </Route>
 

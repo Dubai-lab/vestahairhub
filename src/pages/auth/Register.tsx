@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { supabase }           from '@/lib/supabase'
+import { sendNotification }   from '@/lib/notify'
 import { Button }             from '@/components/ui/Button'
 import { Input }              from '@/components/ui/Input'
 import { UniverseBackground } from '@/components/three/UniverseBackground'
@@ -39,7 +40,7 @@ export default function Register() {
 
   const onSubmit = async (data: FormData) => {
     setApiError('')
-    const { error } = await supabase.auth.signUp({
+    const { error, data: signUpData } = await supabase.auth.signUp({
       email:    data.email,
       password: data.password,
       options:  {
@@ -50,6 +51,15 @@ export default function Register() {
       },
     })
     if (error) { setApiError(error.message); return }
+
+    // Fire welcome notification using the session token from signUp response
+    // (avoids a race condition with onAuthStateChange not yet updating the store)
+    if (signUpData?.session?.access_token) {
+      sendNotification(
+        { type: 'welcome', user_name: data.fullName, role: data.role, email_to: data.email },
+        signUpData.session.access_token,
+      ).catch(() => {})
+    }
 
     // onAuthStateChange handles profile creation via DB trigger
     const dest = data.role === 'seller' ? '/dashboard' : '/marketplace'

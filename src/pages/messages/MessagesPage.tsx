@@ -5,9 +5,10 @@ import {
   Smile, Image as ImageIcon,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { supabase } from '@/lib/supabase'
-import { useAuth }  from '@/context/AuthContext'
-import { Spinner }  from '@/components/ui/Spinner'
+import { supabase }         from '@/lib/supabase'
+import { useAuth }           from '@/context/AuthContext'
+import { sendNotification }  from '@/lib/notify'
+import { Spinner }           from '@/components/ui/Spinner'
 import type { Conversation, Message } from '@/types'
 
 /* ── Types ── */
@@ -416,6 +417,15 @@ export default function MessagesPage() {
         content,
       })
 
+      // Notify seller about the new conversation
+      sendNotification({
+        type:            'message_received',
+        seller_id:       pendingProduct.sellerId,
+        sender_name:     buyerName,
+        preview:         content,
+        conversation_id: conv.id,
+      }).catch(() => {})
+
       setPendingProduct(null)
       setIsSending(false)
       await loadConversations()
@@ -440,6 +450,18 @@ export default function MessagesPage() {
 
     if (error) console.error('Send error:', error)
     if (inserted) setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: inserted.id } : m))
+
+    // Notify the other party (seller) about the new message
+    if (inserted && activeConv?.seller_id && activeConv.seller_id !== user.id) {
+      sendNotification({
+        type:            'message_received',
+        seller_id:       activeConv.seller_id,
+        sender_name:     myName,
+        preview:         content,
+        conversation_id: activeConvId,
+      }).catch(() => {})
+    }
+
     setIsSending(false)
     loadConversations()
   }

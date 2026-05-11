@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Menu, X, User, LogOut, LayoutDashboard, ChevronDown, MessageSquare } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth }        from '@/context/AuthContext'
-import { useCartStore }   from '@/store/cartStore'
-import { Button }         from '@/components/ui/Button'
-import { CountryPicker }  from '@/components/ui/CountryPicker'
-import logoSrc            from '@images/logo.png'
+import { useAuth }              from '@/context/AuthContext'
+import { useCartStore }          from '@/store/cartStore'
+import { Button }                from '@/components/ui/Button'
+import { CountryPicker }         from '@/components/ui/CountryPicker'
+import { NotificationBell }      from '@/components/ui/NotificationBell'
+import logoSrc                   from '@images/logo.png'
 
 export function Navbar() {
   const { user, profile, role, isLoading, signOut } = useAuth()
@@ -78,6 +79,9 @@ export function Navbar() {
               <MessageSquare size={20} />
             </Link>
           )}
+
+          {/* Notification bell (logged-in only) */}
+          {user && <NotificationBell />}
 
           {/* Cart */}
           <Link to="/cart" className="relative p-2 text-white/70 hover:text-white transition-colors">

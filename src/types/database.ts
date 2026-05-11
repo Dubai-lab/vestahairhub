@@ -408,6 +408,32 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          id:         string
+          user_id:    string
+          type:       string
+          title:      string
+          body:       string
+          data:       Record<string, unknown>
+          read_at:    string | null
+          created_at: string
+        }
+        Insert: {
+          id?:         string
+          user_id:     string
+          type:        string
+          title:       string
+          body:        string
+          data?:       Record<string, unknown>
+          read_at?:    string | null
+          created_at?: string
+        }
+        Update: {
+          read_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -436,3 +462,4 @@ export type ReviewRow        = Database['public']['Tables']['reviews']['Row']
 export type ConversationRow  = Database['public']['Tables']['conversations']['Row']
 export type MessageRow       = Database['public']['Tables']['messages']['Row']
 export type ReportRow        = Database['public']['Tables']['reports']['Row']
+export type NotificationRow  = Database['public']['Tables']['notifications']['Row']
