@@ -91,7 +91,6 @@ export default function App() {
                 <Route path="account/settings"  element={<SettingsPage />} />
                 <Route path="messages"          element={<MessagesPage />} />
                 <Route path="notifications"    element={<NotificationsPage />} />
-                <Route path="kyc/face"         element={<FaceCapturePage />} />
               </Route>
             </Route>
 
@@ -124,6 +123,9 @@ export default function App() {
                 </Route>
               </Route>
             </Route>
+
+            {/* ── KYC face capture — public, no layout (standalone page) ── */}
+            <Route path="kyc/face" element={<FaceCapturePage />} />
 
             {/* ── Fallback ── */}
             <Route path="*" element={<Navigate to="/" replace />} />
