@@ -60,8 +60,8 @@ export function Footer() {
               {[
                 { label: 'Start Selling',    to: '/auth/register' },
                 { label: 'Seller Dashboard', to: '/dashboard' },
-                { label: 'How It Works',     to: '/#how-it-works' },
-                { label: 'Pricing Plans',    to: '/#pricing' },
+                { label: 'How It Works',     to: '/how-it-works' },
+                { label: 'Pricing Plans',    to: '/pricing' },
               ].map((l) => (
                 <li key={l.to}>
                   <Link to={l.to} className="text-sm text-white/50 hover:text-brand-400 transition-colors">

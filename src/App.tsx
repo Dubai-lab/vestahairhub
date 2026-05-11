@@ -15,10 +15,12 @@ const Marketplace    = lazy(() => import('@/pages/marketplace/Marketplace'))
 const ShopPage       = lazy(() => import('@/pages/shop/ShopPage'))
 const ProductPage    = lazy(() => import('@/pages/product/ProductPage'))
 const CartPage       = lazy(() => import('@/pages/cart/CartPage'))
-const AboutPage      = lazy(() => import('@/pages/company/AboutPage'))
-const PrivacyPage    = lazy(() => import('@/pages/company/PrivacyPage'))
-const TermsPage      = lazy(() => import('@/pages/company/TermsPage'))
-const SupportPage    = lazy(() => import('@/pages/company/SupportPage'))
+const AboutPage       = lazy(() => import('@/pages/company/AboutPage'))
+const PrivacyPage     = lazy(() => import('@/pages/company/PrivacyPage'))
+const TermsPage       = lazy(() => import('@/pages/company/TermsPage'))
+const SupportPage     = lazy(() => import('@/pages/company/SupportPage'))
+const HowItWorksPage  = lazy(() => import('@/pages/company/HowItWorksPage'))
+const PricingPage     = lazy(() => import('@/pages/company/PricingPage'))
 
 // ── Auth pages ────────────────────────────────────────────────────────────────
 const Login          = lazy(() => import('@/pages/auth/Login'))
@@ -65,7 +67,9 @@ export default function App() {
               <Route path="about"       element={<AboutPage />} />
               <Route path="privacy"     element={<PrivacyPage />} />
               <Route path="terms"       element={<TermsPage />} />
-              <Route path="support"     element={<SupportPage />} />
+              <Route path="support"       element={<SupportPage />} />
+              <Route path="how-it-works" element={<HowItWorksPage />} />
+              <Route path="pricing"      element={<PricingPage />} />
             </Route>
 
             {/* ── Auth (redirect if already logged in) ── */}
