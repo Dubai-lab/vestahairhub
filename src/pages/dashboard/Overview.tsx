@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Package, ShoppingCart, TrendingUp, Clock } from 'lucide-react'
+import { Package, ShoppingCart, TrendingUp, Clock, DollarSign } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useAuth }    from '@/context/AuthContext'
-import { supabase }   from '@/lib/supabase'
-import { Spinner }    from '@/components/ui/Spinner'
-import { Badge }      from '@/components/ui/Badge'
-import type { Order } from '@/types'
+import { useAuth }         from '@/context/AuthContext'
+import { supabase }        from '@/lib/supabase'
+import { Spinner }         from '@/components/ui/Spinner'
+import { Badge }           from '@/components/ui/Badge'
+import { formatPrice }     from '@/lib/currencies'
+import type { Order }      from '@/types'
 
 const ORDER_STATUS_BADGE: Record<string, { label: string; variant: 'gold' | 'green' | 'red' | 'blue' | 'gray' }> = {
   pending_payment:    { label: 'Awaiting Payment', variant: 'gray' },
@@ -37,20 +38,23 @@ export default function Overview() {
     queryKey: ['dashboard-stats', shop?.id],
     enabled:  !!shop,
     queryFn:  async () => {
-      const [{ count: products }, { count: orders }, { data: recentOrders }] = await Promise.all([
+      const [{ count: products }, { count: orders }, { data: recentOrders }, { data: salesRows }] = await Promise.all([
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('shop_id', shop!.id),
         supabase.from('orders').select('*', { count: 'exact', head: true }).eq('shop_id', shop!.id),
         supabase.from('orders').select('*, order_items(*)').eq('shop_id', shop!.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('orders').select('total_amount').eq('shop_id', shop!.id).neq('status', 'cancelled'),
       ])
-      return { products: products ?? 0, orders: orders ?? 0, recentOrders: recentOrders ?? [] }
+      const totalSales = (salesRows ?? []).reduce((sum, o) => sum + (o.total_amount ?? 0), 0)
+      return { products: products ?? 0, orders: orders ?? 0, recentOrders: recentOrders ?? [], totalSales }
     },
   })
 
   const STAT_CARDS = [
-    { label: 'Total Products', value: stats?.products ?? 0, Icon: Package,     color: 'text-amber-400',  bg: 'bg-amber-400/10' },
-    { label: 'Total Orders',   value: stats?.orders ?? 0,   Icon: ShoppingCart, color: 'text-brand-400',  bg: 'bg-brand-400/10' },
-    { label: 'Pending Review', value: (stats?.recentOrders as Order[])?.filter((o) => o.status === 'payment_submitted').length ?? 0, Icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { label: 'Active Shop',    value: shop ? 1 : 0,          Icon: TrendingUp,  color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+    { label: 'Total Sales',    value: formatPrice(stats?.totalSales ?? 0, shop?.currency), Icon: DollarSign,   color: 'text-brand-400',   bg: 'bg-brand-400/10'   },
+    { label: 'Total Products', value: stats?.products ?? 0,                                Icon: Package,      color: 'text-amber-400',   bg: 'bg-amber-400/10'   },
+    { label: 'Total Orders',   value: stats?.orders ?? 0,                                  Icon: ShoppingCart, color: 'text-blue-400',    bg: 'bg-blue-400/10'    },
+    { label: 'Pending Review', value: (stats?.recentOrders as Order[])?.filter((o) => o.status === 'payment_submitted').length ?? 0, Icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+    { label: 'Active Shop',    value: shop ? 1 : 0,                                        Icon: TrendingUp,   color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
   ]
 
   return (
@@ -68,7 +72,7 @@ export default function Overview() {
       ) : (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {STAT_CARDS.map((card, i) => (
               <motion.div
                 key={card.label}
