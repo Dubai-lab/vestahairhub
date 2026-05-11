@@ -235,6 +235,7 @@ export default function MessagesPage() {
     setConvLoading(false)
   }, [user])
 
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   useEffect(() => { loadConversations() }, [loadConversations])
 
   /* ── Handle URL params from product "Chat with Seller" button ── */
@@ -484,7 +485,7 @@ export default function MessagesPage() {
 
   /* ── Render ── */
   return (
-    <div className="fixed inset-0 top-16 flex flex-col bg-space-900 z-10">
+    <div className="h-screen flex flex-col pt-16 bg-space-900">
       <div className="flex flex-1 overflow-hidden">
 
         {/* ════ Left Panel: Conversation List ════ */}
