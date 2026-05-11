@@ -50,11 +50,11 @@ export default function Overview() {
   })
 
   const STAT_CARDS = [
-    { label: 'Total Sales',    value: formatPrice(stats?.totalSales ?? 0, shop?.currency), Icon: DollarSign,   color: 'text-brand-400',   bg: 'bg-brand-400/10'   },
-    { label: 'Total Products', value: stats?.products ?? 0,                                Icon: Package,      color: 'text-amber-400',   bg: 'bg-amber-400/10'   },
-    { label: 'Total Orders',   value: stats?.orders ?? 0,                                  Icon: ShoppingCart, color: 'text-blue-400',    bg: 'bg-blue-400/10'    },
-    { label: 'Pending Review', value: (stats?.recentOrders as Order[])?.filter((o) => o.status === 'payment_submitted').length ?? 0, Icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-    { label: 'Active Shop',    value: shop ? 1 : 0,                                        Icon: TrendingUp,   color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+    { label: 'Total Sales',    value: formatPrice(stats?.totalSales ?? 0, shop?.currency), compact: true,  Icon: DollarSign,   color: 'text-brand-400',   bg: 'bg-brand-400/10'   },
+    { label: 'Total Products', value: stats?.products ?? 0,                                compact: false, Icon: Package,      color: 'text-amber-400',   bg: 'bg-amber-400/10'   },
+    { label: 'Total Orders',   value: stats?.orders ?? 0,                                  compact: false, Icon: ShoppingCart, color: 'text-blue-400',    bg: 'bg-blue-400/10'    },
+    { label: 'Pending Review', value: (stats?.recentOrders as Order[])?.filter((o) => o.status === 'payment_submitted').length ?? 0, compact: false, Icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+    { label: 'Active Shop',    value: shop ? 1 : 0,                                        compact: false, Icon: TrendingUp,   color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
   ]
 
   return (
@@ -84,8 +84,10 @@ export default function Overview() {
                 <div className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center`}>
                   <card.Icon size={20} className={card.color} />
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-white">{card.value}</div>
+                <div className="min-w-0">
+                  <div className={`font-bold text-white truncate ${card.compact ? 'text-xl' : 'text-3xl'}`}>
+                    {card.value}
+                  </div>
                   <div className="text-xs text-white/40 mt-0.5">{card.label}</div>
                 </div>
               </motion.div>
