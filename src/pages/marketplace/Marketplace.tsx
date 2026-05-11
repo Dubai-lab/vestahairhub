@@ -10,7 +10,7 @@ import { useCountryStore }   from '@/store/countryStore'
 import type { Product, Category } from '@/types'
 
 type ProductWithShop = Product & {
-  shops: { name: string; slug: string; status: string; country: string | null; currency: string } | null
+  shops: { name: string; slug: string; status: string; kyc_status: string; country: string | null; currency: string } | null
 }
 
 export default function Marketplace() {
@@ -32,9 +32,10 @@ export default function Marketplace() {
     queryFn:  async () => {
       let q = supabase
         .from('products')
-        .select('*, shops!inner(name, slug, status, country, currency)')
+        .select('*, shops!inner(name, slug, status, kyc_status, country, currency)')
         .eq('status', 'active')
         .eq('shops.status', 'active')
+        .eq('shops.kyc_status', 'approved')
         .order('created_at', { ascending: false })
         .limit(60)
 

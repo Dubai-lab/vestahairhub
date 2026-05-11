@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import {
   LayoutDashboard, Package, ShoppingCart, Settings, CreditCard,
-  MessageSquare, Menu, X, LogOut, ChevronRight,
+  MessageSquare, Menu, X, LogOut, ChevronRight, Shield,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth }  from '@/context/AuthContext'
@@ -16,6 +16,7 @@ const navItems = [
   { to: '/dashboard/messages',  label: 'Messages',         Icon: MessageSquare },
   { to: '/dashboard/payments',  label: 'Payment Methods',  Icon: CreditCard },
   { to: '/dashboard/settings',  label: 'Shop Settings',    Icon: Settings },
+  { to: '/dashboard/kyc',       label: 'KYC Verification', Icon: Shield },
 ]
 
 export function DashboardLayout() {

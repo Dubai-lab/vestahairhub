@@ -26,7 +26,11 @@ export default function ShopPage() {
     queryKey: ['shop', slug],
     queryFn:  async () => {
       const { data } = await supabase
-        .from('shops').select('*').eq('slug', slug!).eq('status', 'active').maybeSingle()
+        .from('shops').select('*')
+        .eq('slug', slug!)
+        .eq('status', 'active')
+        .eq('kyc_status', 'approved')
+        .maybeSingle()
       return data
     },
   })

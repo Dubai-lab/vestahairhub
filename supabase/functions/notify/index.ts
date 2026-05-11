@@ -265,6 +265,63 @@ serve(async (req: Request) => {
       })
     }
 
+    // ── kyc_approved ────────────────────────────────────────────────────────
+    else if (type === "kyc_approved") {
+      const seller_id   = String(payload.seller_id   ?? "")
+      const seller_name = String(payload.seller_name ?? "Seller")
+      const shop_name   = String(payload.shop_name   ?? "")
+
+      if (!seller_id) return respond({ success: true })
+
+      toInsert.push({
+        user_id: seller_id,
+        type:    "kyc_approved",
+        title:   "KYC Verified! Your shop is now live 🎉",
+        body:    `Congratulations! Your identity has been verified. ${shop_name} is now visible in the marketplace.`,
+        data:    { shop_name },
+      })
+
+      const { data: sellerAuth } = await adminClient.auth.admin.getUserById(seller_id)
+      const sellerEmail = sellerAuth?.user?.email ?? ""
+      if (sellerEmail) {
+        toEmail.push({
+          to:      sellerEmail,
+          subject: "Your VestaHairHub Shop is Now Verified! ✅",
+          html:    getEmailHtml("kyc_approved", { seller_name, shop_name } as EmailData),
+        })
+      }
+    }
+
+    // ── kyc_rejected ────────────────────────────────────────────────────────
+    else if (type === "kyc_rejected") {
+      const seller_id   = String(payload.seller_id   ?? "")
+      const seller_name = String(payload.seller_name ?? "Seller")
+      const shop_name   = String(payload.shop_name   ?? "")
+      const notes       = String(payload.notes       ?? "")
+
+      if (!seller_id) return respond({ success: true })
+
+      toInsert.push({
+        user_id: seller_id,
+        type:    "kyc_rejected",
+        title:   "KYC Verification Unsuccessful",
+        body:    notes
+          ? `Your KYC was not approved. Reason: ${notes.slice(0, 120)}`
+          : "Your KYC verification could not be completed. Please check your dashboard for details.",
+        data:    { shop_name, notes },
+      })
+
+      const { data: sellerAuth } = await adminClient.auth.admin.getUserById(seller_id)
+      const sellerEmail = sellerAuth?.user?.email ?? ""
+      if (sellerEmail) {
+        toEmail.push({
+          to:      sellerEmail,
+          subject: "Action Required: KYC Verification Update — VestaHairHub",
+          html:    getEmailHtml("kyc_rejected", { seller_name, shop_name, notes } as EmailData),
+        })
+      }
+    }
+
     else {
       return respond({ error: `Unknown notification type: ${type}` }, 400)
     }

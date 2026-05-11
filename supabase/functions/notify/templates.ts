@@ -148,6 +148,52 @@ export function getEmailHtml(type: string, data: EmailData): string {
         </div>`)
     }
 
+    case "kyc_approved":
+      return baseLayout(`
+        <div class="body">
+          <h1 class="h1">✅ You're Verified!</h1>
+          <p class="p">Hi <span class="em">${data.seller_name}</span>, congratulations! Your identity verification is complete.</p>
+          <div class="card">
+            <p class="lbl">Shop</p>
+            <p class="val">${data.shop_name}</p>
+            <div class="row">
+              <p class="lbl">Status</p>
+              <p class="val gold">✅ Verified & Live</p>
+            </div>
+          </div>
+          <p class="p">
+            Your shop is now fully visible in the VestaHairHub marketplace. Buyers across Africa can now discover and purchase from your shop.
+          </p>
+          <div class="ctr">
+            <a href="${BASE_URL}/dashboard" class="btn">🚀 Go to Dashboard</a>
+          </div>
+          <p class="p" style="font-size:13px;margin-bottom:0">
+            Thank you for completing the verification process. Your trust is important to us.
+          </p>
+        </div>`)
+
+    case "kyc_rejected":
+      return baseLayout(`
+        <div class="body">
+          <h1 class="h1">KYC Verification Update</h1>
+          <p class="p">Hi <span class="em">${data.seller_name}</span>, we were unable to verify your identity at this time.</p>
+          ${data.notes ? `
+          <div class="card">
+            <p class="lbl">Reason</p>
+            <p class="val" style="font-size:15px;font-weight:400;color:#94a3b8">${data.notes}</p>
+          </div>` : ''}
+          <p class="p">
+            You can re-apply by logging in to your dashboard and updating your KYC information.
+            Make sure your documents are clear, valid, and not expired.
+          </p>
+          <div class="ctr">
+            <a href="${BASE_URL}/dashboard/kyc" class="btn">🔄 Re-apply Now</a>
+          </div>
+          <p class="p" style="font-size:13px;margin-bottom:0">
+            Questions? <a href="${BASE_URL}/support" class="gold">Contact our support team</a> — we're happy to help.
+          </p>
+        </div>`)
+
     default:
       return baseLayout(`
         <div class="body">

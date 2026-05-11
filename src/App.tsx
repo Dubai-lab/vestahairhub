@@ -42,6 +42,7 @@ const AdminShops     = lazy(() => import('@/pages/admin/AdminShops'))
 const AdminOrders    = lazy(() => import('@/pages/admin/AdminOrders'))
 const AdminProducts  = lazy(() => import('@/pages/admin/AdminProducts'))
 const AdminReports   = lazy(() => import('@/pages/admin/AdminReports'))
+const AdminKYC       = lazy(() => import('@/pages/admin/AdminKYC'))
 
 // ── Seller dashboard pages (require login + seller role) ─────────────────────
 const DashboardOverview    = lazy(() => import('@/pages/dashboard/Overview'))
@@ -50,6 +51,8 @@ const DashboardOrders      = lazy(() => import('@/pages/dashboard/Orders'))
 const DashboardMessages    = lazy(() => import('@/pages/dashboard/Messages'))
 const DashboardSettings    = lazy(() => import('@/pages/dashboard/ShopSettings'))
 const DashboardPayments    = lazy(() => import('@/pages/dashboard/PaymentSettings'))
+const DashboardKYC         = lazy(() => import('@/pages/dashboard/KYC'))
+const FaceCapturePage      = lazy(() => import('@/pages/kyc/FaceCapturePage'))
 
 export default function App() {
   return (
@@ -88,6 +91,7 @@ export default function App() {
                 <Route path="account/settings"  element={<SettingsPage />} />
                 <Route path="messages"          element={<MessagesPage />} />
                 <Route path="notifications"    element={<NotificationsPage />} />
+                <Route path="kyc/face"         element={<FaceCapturePage />} />
               </Route>
             </Route>
 
@@ -101,6 +105,7 @@ export default function App() {
                   <Route path="orders"       element={<AdminOrders />} />
                   <Route path="products"     element={<AdminProducts />} />
                   <Route path="reports"      element={<AdminReports />} />
+                  <Route path="kyc"          element={<AdminKYC />} />
                 </Route>
               </Route>
             </Route>
@@ -115,6 +120,7 @@ export default function App() {
                   <Route path="messages"     element={<DashboardMessages />} />
                   <Route path="settings"     element={<DashboardSettings />} />
                   <Route path="payments"     element={<DashboardPayments />} />
+                  <Route path="kyc"          element={<DashboardKYC />} />
                 </Route>
               </Route>
             </Route>

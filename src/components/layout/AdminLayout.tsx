@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Store, ShoppingBag, Package, Flag, LogOut, Shield } from 'lucide-react'
+import { LayoutDashboard, Users, Store, ShoppingBag, Package, Flag, LogOut, Shield, Fingerprint } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const NAV = [
@@ -9,6 +9,7 @@ const NAV = [
   { to: '/admin/orders',    label: 'Orders',    icon: ShoppingBag },
   { to: '/admin/products',  label: 'Products',  icon: Package },
   { to: '/admin/reports',   label: 'Reports',   icon: Flag },
+  { to: '/admin/kyc',       label: 'KYC',       icon: Fingerprint },
 ]
 
 export default function AdminLayout() {
@@ -65,6 +66,7 @@ export default function AdminLayout() {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => { signOut(); navigate('/auth/login') }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/40 hover:text-red-400 hover:bg-red-500/8 transition-all"
           >

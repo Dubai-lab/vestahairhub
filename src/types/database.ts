@@ -84,19 +84,20 @@ export type Database = {
       }
       shops: {
         Row: {
-          id:          string
-          seller_id:   string
-          name:        string
-          slug:        string
-          description: string | null
-          logo_url:    string | null
-          banner_url:  string | null
-          theme_color: string
-          country:     string | null
+          id:               string
+          seller_id:        string
+          name:             string
+          slug:             string
+          description:      string | null
+          logo_url:         string | null
+          banner_url:       string | null
+          theme_color:      string
+          country:          string | null
           city:             string | null
           whatsapp_number:  string | null
           currency:         string
           status:           string
+          kyc_status:       string
           created_at:       string
           updated_at:       string
         }
@@ -114,6 +115,7 @@ export type Database = {
           whatsapp_number?: string | null
           currency?:        string
           status?:          string
+          kyc_status?:      string
           created_at?:      string
           updated_at?:      string
         }
@@ -129,6 +131,7 @@ export type Database = {
           whatsapp_number?: string | null
           currency?:        string
           status?:          string
+          kyc_status?:      string
           updated_at?:      string
         }
         Relationships: []
@@ -434,6 +437,82 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_verifications: {
+        Row: {
+          id:               string
+          seller_id:        string
+          shop_id:          string
+          full_name:        string | null
+          date_of_birth:    string | null
+          address:          string | null
+          city:             string | null
+          country:          string | null
+          id_type:          string | null
+          id_number:        string | null
+          id_expiry_date:   string | null
+          id_front_path:    string | null
+          id_back_path:     string | null
+          face_token:       string
+          selfie_path:      string | null
+          face_captured_at: string | null
+          status:           string
+          current_step:     number
+          admin_notes:      string | null
+          submitted_at:     string | null
+          reviewed_at:      string | null
+          reviewed_by:      string | null
+          created_at:       string
+          updated_at:       string
+        }
+        Insert: {
+          id?:               string
+          seller_id:         string
+          shop_id:           string
+          full_name?:        string | null
+          date_of_birth?:    string | null
+          address?:          string | null
+          city?:             string | null
+          country?:          string | null
+          id_type?:          string | null
+          id_number?:        string | null
+          id_expiry_date?:   string | null
+          id_front_path?:    string | null
+          id_back_path?:     string | null
+          face_token?:       string
+          selfie_path?:      string | null
+          face_captured_at?: string | null
+          status?:           string
+          current_step?:     number
+          admin_notes?:      string | null
+          submitted_at?:     string | null
+          reviewed_at?:      string | null
+          reviewed_by?:      string | null
+          created_at?:       string
+          updated_at?:       string
+        }
+        Update: {
+          full_name?:        string | null
+          date_of_birth?:    string | null
+          address?:          string | null
+          city?:             string | null
+          country?:          string | null
+          id_type?:          string | null
+          id_number?:        string | null
+          id_expiry_date?:   string | null
+          id_front_path?:    string | null
+          id_back_path?:     string | null
+          selfie_path?:      string | null
+          face_captured_at?: string | null
+          status?:           string
+          current_step?:     number
+          admin_notes?:      string | null
+          submitted_at?:     string | null
+          reviewed_at?:      string | null
+          reviewed_by?:      string | null
+          updated_at?:       string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -451,15 +530,16 @@ export type Database = {
 }
 
 // Convenience row types
-export type ProfileRow       = Database['public']['Tables']['profiles']['Row']
-export type ShopRow          = Database['public']['Tables']['shops']['Row']
-export type CategoryRow      = Database['public']['Tables']['categories']['Row']
-export type ProductRow       = Database['public']['Tables']['products']['Row']
-export type OrderRow         = Database['public']['Tables']['orders']['Row']
-export type OrderItemRow     = Database['public']['Tables']['order_items']['Row']
-export type ShopPaymentRow   = Database['public']['Tables']['shop_payment_methods']['Row']
-export type ReviewRow        = Database['public']['Tables']['reviews']['Row']
-export type ConversationRow  = Database['public']['Tables']['conversations']['Row']
-export type MessageRow       = Database['public']['Tables']['messages']['Row']
-export type ReportRow        = Database['public']['Tables']['reports']['Row']
-export type NotificationRow  = Database['public']['Tables']['notifications']['Row']
+export type ProfileRow          = Database['public']['Tables']['profiles']['Row']
+export type ShopRow             = Database['public']['Tables']['shops']['Row']
+export type CategoryRow         = Database['public']['Tables']['categories']['Row']
+export type ProductRow          = Database['public']['Tables']['products']['Row']
+export type OrderRow            = Database['public']['Tables']['orders']['Row']
+export type OrderItemRow        = Database['public']['Tables']['order_items']['Row']
+export type ShopPaymentRow      = Database['public']['Tables']['shop_payment_methods']['Row']
+export type ReviewRow           = Database['public']['Tables']['reviews']['Row']
+export type ConversationRow     = Database['public']['Tables']['conversations']['Row']
+export type MessageRow          = Database['public']['Tables']['messages']['Row']
+export type ReportRow           = Database['public']['Tables']['reports']['Row']
+export type NotificationRow     = Database['public']['Tables']['notifications']['Row']
+export type KYCVerificationRow  = Database['public']['Tables']['kyc_verifications']['Row']

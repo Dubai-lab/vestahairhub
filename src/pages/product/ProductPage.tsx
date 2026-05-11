@@ -143,7 +143,7 @@ export default function ProductPage() {
         .eq('id', id!)
         .maybeSingle()
       return data as (Product & {
-        shops:      { id: string; name: string; slug: string; seller_id: string; whatsapp_number: string | null; currency: string } | null
+        shops:      { id: string; name: string; slug: string; seller_id: string; whatsapp_number: string | null; currency: string; kyc_status: string } | null
         categories: { name: string } | null
       }) | null
     },
@@ -157,6 +157,14 @@ export default function ProductPage() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 pt-24">
       <p className="text-white/50">Product not found</p>
       <Link to="/marketplace" className="text-brand-400 hover:underline">Back to marketplace</Link>
+    </div>
+  )
+
+  if (product.shops && product.shops.kyc_status !== 'approved') return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 pt-24 text-center px-4">
+      <p className="text-white/50 text-lg">This shop is pending verification</p>
+      <p className="text-white/30 text-sm max-w-sm">This seller is currently completing identity verification. Products will be visible once their shop is approved.</p>
+      <Link to="/marketplace" className="text-brand-400 hover:underline text-sm">Browse other products</Link>
     </div>
   )
 
