@@ -16,6 +16,7 @@ interface AuthContextValue {
   profile:         Profile | null
   role:            UserRole | null
   isLoading:       boolean
+  profileLoading:  boolean
   signOut:         () => void
   refreshProfile:  () => Promise<void>
 }
@@ -37,14 +38,17 @@ async function fetchProfileSafe(userId: string): Promise<Profile | null> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user,      setUser]      = useState<User | null>(null)
-  const [session,   setSession]   = useState<Session | null>(null)
-  const [profile,   setProfile]   = useState<Profile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user,           setUser]           = useState<User | null>(null)
+  const [session,        setSession]        = useState<Session | null>(null)
+  const [profile,        setProfile]        = useState<Profile | null>(null)
+  const [isLoading,      setIsLoading]      = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   const loadProfile = useCallback(async (userId: string) => {
+    setProfileLoading(true)
     const p = await fetchProfileSafe(userId)
     setProfile(p)
+    setProfileLoading(false)
   }, [])
 
   useEffect(() => {
@@ -101,8 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         profile,
-        role:     (profile?.role ?? null) as UserRole | null,
+        role:           (profile?.role ?? null) as UserRole | null,
         isLoading,
+        profileLoading,
         signOut,
         refreshProfile,
       }}
