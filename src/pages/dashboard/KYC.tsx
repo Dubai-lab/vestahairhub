@@ -219,6 +219,15 @@ function Step2({ kyc, userId, onNext, onBack }: {
   const frontRef = useRef<HTMLInputElement>(null)
   const backRef  = useRef<HTMLInputElement>(null)
 
+  const isPassport   = idType === 'passport'
+  const requiresBack = idType === 'national_id'
+
+  function handleTypeChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    setIdType(e.target.value)
+    setBackPath('')   // clear back upload when switching type
+    setErr('')
+  }
+
   async function uploadDoc(file: File, side: 'front' | 'back') {
     setUploading(side)
     const ext  = file.name.split('.').pop() ?? 'jpg'
@@ -232,15 +241,33 @@ function Step2({ kyc, userId, onNext, onBack }: {
 
   async function handleNext() {
     if (!idType || !idNumber || !idExpiry || !frontPath) {
-      setErr('Please complete all required fields and upload the front of your ID.'); return
+      setErr('Please complete all required fields and upload your document.'); return
+    }
+    if (requiresBack && !backPath) {
+      setErr('National ID requires both front and back to be uploaded.'); return
     }
     const today = new Date(); today.setHours(0, 0, 0, 0)
     if (new Date(idExpiry) <= today) { setErr('Your ID has expired. Please use a valid document.'); return }
     setSaving(true)
-    try { await onNext({ id_type: idType, id_number: idNumber, id_expiry_date: idExpiry, id_front_path: frontPath, id_back_path: backPath }) }
+    try { await onNext({ id_type: idType, id_number: idNumber, id_expiry_date: idExpiry, id_front_path: frontPath, id_back_path: backPath || null }) }
     catch { setErr('Failed to save. Please try again.') }
     setSaving(false)
   }
+
+  // What to upload — instructions per doc type
+  const uploadHint =
+    idType === 'passport'         ? 'Upload the photo/data page of your passport (the page with your photo and personal details).' :
+    idType === 'national_id'      ? 'Upload clear photos of both the front and back of your National ID card.' :
+    idType === 'drivers_license'  ? 'Upload the front of your Driver\'s License. The back is optional but recommended.' :
+    null
+
+  // Build upload slots based on doc type
+  const uploadSlots = isPassport
+    ? [{ side: 'front' as const, label: 'Data Page *', ref: frontRef, path: frontPath }]
+    : [
+        { side: 'front' as const, label: 'Front *',                         ref: frontRef, path: frontPath },
+        { side: 'back'  as const, label: requiresBack ? 'Back *' : 'Back',  ref: backRef,  path: backPath  },
+      ]
 
   return (
     <div className="space-y-5 max-w-lg">
@@ -254,12 +281,15 @@ function Step2({ kyc, userId, onNext, onBack }: {
         <label className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-1.5 block">Document Type</label>
         <select
           value={idType}
-          onChange={e => setIdType(e.target.value)}
+          onChange={handleTypeChange}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
         >
           <option value="" className="bg-space-900">Select document type…</option>
           {ID_TYPES.map(t => <option key={t.value} value={t.value} className="bg-space-900">{t.label}</option>)}
         </select>
+        {uploadHint && (
+          <p className="mt-2 text-xs text-white/40 leading-relaxed">{uploadHint}</p>
+        )}
       </div>
 
       {/* ID Number */}
@@ -281,35 +311,34 @@ function Step2({ kyc, userId, onNext, onBack }: {
         />
       </div>
 
-      {/* Document uploads */}
-      <div className="grid grid-cols-2 gap-4">
-        {[
-          { side: 'front' as const, label: 'Front of ID *', ref: frontRef, path: frontPath, required: true },
-          { side: 'back'  as const, label: 'Back of ID',    ref: backRef,  path: backPath,  required: false },
-        ].map(({ side, label, ref, path }) => (
-          <div key={side}>
-            <label className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-1.5 block">{label}</label>
-            <input ref={ref} type="file" accept="image/*,.pdf" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) uploadDoc(f, side) }} />
-            <button
-              type="button"
-              onClick={() => ref.current?.click()}
-              className={`w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors ${
-                path
-                  ? 'border-green-500/40 bg-green-500/5 text-green-400'
-                  : 'border-white/15 bg-white/3 text-white/30 hover:border-brand-500/40 hover:text-brand-400'
-              }`}
-            >
-              {uploading === side
-                ? <Loader2 size={22} className="animate-spin" />
-                : path
-                  ? <><CheckCircle2 size={22} /><span className="text-xs font-medium">Uploaded</span></>
-                  : <><Upload size={22} /><span className="text-xs">Click to upload</span></>
-              }
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* Document uploads — slots change based on doc type */}
+      {idType && (
+        <div className={`grid gap-4 ${uploadSlots.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {uploadSlots.map(({ side, label, ref, path }) => (
+            <div key={side}>
+              <label className="text-xs text-white/50 uppercase tracking-wider font-semibold mb-1.5 block">{label}</label>
+              <input ref={ref} type="file" accept="image/*,.pdf" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadDoc(f, side) }} />
+              <button
+                type="button"
+                onClick={() => ref.current?.click()}
+                className={`w-full aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors ${
+                  path
+                    ? 'border-green-500/40 bg-green-500/5 text-green-400'
+                    : 'border-white/15 bg-white/3 text-white/30 hover:border-brand-500/40 hover:text-brand-400'
+                }`}
+              >
+                {uploading === side
+                  ? <Loader2 size={22} className="animate-spin" />
+                  : path
+                    ? <><CheckCircle2 size={22} /><span className="text-xs font-medium">Uploaded</span></>
+                    : <><Upload size={22} /><span className="text-xs">Click to upload</span></>
+                }
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {err && <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle size={14} />{err}</p>}
 
