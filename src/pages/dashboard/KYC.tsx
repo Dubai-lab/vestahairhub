@@ -11,7 +11,6 @@ import { supabase }  from '@/lib/supabase'
 import { useAuth }   from '@/context/AuthContext'
 import { Button }    from '@/components/ui/Button'
 import { Spinner }   from '@/components/ui/Spinner'
-import { sendNotification } from '@/lib/notify'
 import type { KYCVerificationRow } from '@/types/database'
 
 type KYC = KYCVerificationRow
@@ -662,11 +661,6 @@ export default function KYCPage() {
       .update({ status: 'submitted', submitted_at: now, updated_at: now })
       .eq('id', kyc!.id)
     qc.invalidateQueries({ queryKey: ['kyc'] })
-    // Notify seller that submission was received
-    sendNotification({
-      type:      'kyc_submitted' as never,
-      user_name: profile?.full_name ?? 'Seller',
-    })
     await refetch()
   }
 

@@ -14,8 +14,7 @@ import { sendNotification } from '@/lib/notify'
 import type { KYCVerificationRow } from '@/types/database'
 
 type KYC = KYCVerificationRow & {
-  profiles?: { full_name: string | null; avatar_url: string | null } | null
-  shops?:    { name: string; slug: string } | null
+  shops?: { name: string; slug: string } | null
 }
 
 const STATUS_BADGE: Record<string, { label: string; variant: 'gold' | 'green' | 'red' | 'blue' | 'gray' }> = {
@@ -75,7 +74,7 @@ function KYCRow({ kyc }: { kyc: KYC }) {
       await sendNotification({
         type:        action === 'approve' ? 'kyc_approved' : 'kyc_rejected',
         seller_id:   kyc.seller_id,
-        seller_name: kyc.profiles?.full_name ?? 'Seller',
+        seller_name: kyc.full_name ?? 'Seller',
         shop_name:   kyc.shops?.name ?? '',
         notes:       notes,
       } as never)
@@ -95,11 +94,11 @@ function KYCRow({ kyc }: { kyc: KYC }) {
         className="w-full flex items-center gap-4 px-6 py-4 hover:bg-white/3 transition-colors text-left"
       >
         <div className="w-10 h-10 rounded-full bg-brand-500/15 border border-brand-500/20 flex items-center justify-center text-brand-400 font-bold text-sm shrink-0">
-          {(kyc.profiles?.full_name?.[0] ?? kyc.full_name?.[0] ?? '?').toUpperCase()}
+          {(kyc.full_name?.[0] ?? '?').toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">
-            {kyc.profiles?.full_name ?? kyc.full_name ?? '—'}
+            {kyc.full_name ?? '—'}
           </p>
           <p className="text-xs text-white/40 truncate mt-0.5">
             {kyc.shops?.name ?? '—'} · {kyc.submitted_at ? new Date(kyc.submitted_at).toLocaleDateString() : new Date(kyc.created_at).toLocaleDateString()}
@@ -255,7 +254,7 @@ export default function AdminKYC() {
     queryFn:  async () => {
       let q = supabase
         .from('kyc_verifications')
-        .select('*, profiles(full_name, avatar_url), shops(name, slug)')
+        .select('*, shops(name, slug)')
         .order('submitted_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
 
@@ -263,7 +262,7 @@ export default function AdminKYC() {
 
       const { data, error } = await q
       if (error) throw error
-      return (data ?? []) as KYC[]
+      return (data ?? []) as unknown as KYC[]
     },
   })
 
