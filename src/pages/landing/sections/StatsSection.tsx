@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 
-const STATS = [
-  { value: 5000,  suffix: '+', label: 'Active Sellers',    prefix: '' },
-  { value: 50000, suffix: '+', label: 'Products Listed',   prefix: '' },
-  { value: 15,    suffix: '+', label: 'African Countries',  prefix: '' },
-  { value: 98,    suffix: '%', label: 'Seller Satisfaction', prefix: '' },
+const STATIC_STATS = [
+  { key: 'sellers',   suffix: '+', label: 'Active Sellers',     prefix: '' },
+  { key: 'products',  suffix: '+', label: 'Products Listed',    prefix: '' },
+  { key: 'countries', suffix: '+', label: 'African Countries',  prefix: '', static: 15 },
+  { key: 'sat',       suffix: '%', label: 'Seller Satisfaction', prefix: '', static: 98 },
 ]
 
 function Counter({ value, suffix, prefix }: { value: number; suffix: string; prefix: string }) {
@@ -34,12 +36,29 @@ function Counter({ value, suffix, prefix }: { value: number; suffix: string; pre
 }
 
 export function StatsSection() {
+  const { data: liveStats } = useQuery<{ sellers: number; products: number }>({
+    queryKey: ['stats-section'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const [{ count: sellers }, { count: products }] = await Promise.all([
+        supabase.from('shops').select('id', { count: 'exact', head: true }).eq('kyc_status', 'approved'),
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+      ])
+      return { sellers: sellers ?? 0, products: products ?? 0 }
+    },
+  })
+
+  const resolved = STATIC_STATS.map(s => ({
+    ...s,
+    value: s.static ?? (liveStats ? (liveStats as any)[s.key] : 0),
+  }))
+
   return (
     <section className="section relative z-10">
       <div className="container-xl">
         <div className="glass-dark rounded-3xl p-8 sm:p-12">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {STATS.map((s, i) => (
+            {resolved.map((s, i) => (
               <motion.div
                 key={s.label}
                 initial={{ opacity: 0, y: 20 }}
