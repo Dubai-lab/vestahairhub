@@ -418,11 +418,10 @@ export default function Products() {
                       )}
                       {/* Color dots */}
                       {colors.length > 0 && (
-                        <span className="flex items-center gap-0.5">
-                          {colors.slice(0, 5).map(hex => (
+                        <span className="flex items-center flex-wrap gap-0.5">
+                          {colors.map(hex => (
                             <span key={hex} className="w-3 h-3 rounded-full border border-white/20 inline-block" style={{ backgroundColor: hex }} />
                           ))}
-                          {colors.length > 5 && <span className="text-xs text-white/25">+{colors.length - 5}</span>}
                         </span>
                       )}
                       {/* Size count */}
