@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   useCallback,
   type ReactNode,
@@ -44,7 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading,      setIsLoading]      = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
 
-  const loadProfile = useCallback(async (userId: string) => {
+  // Track which user ID already has a loaded profile so that Supabase auth
+  // events fired on browser restore/minimize (TOKEN_REFRESHED, SIGNED_IN
+  // re-fires, etc.) never trigger a redundant profile fetch and spinner.
+  const profileLoadedForRef = useRef<string | null>(null)
+
+  const loadProfile = useCallback(async (userId: string, force = false) => {
+    if (!force && profileLoadedForRef.current === userId) return
+    profileLoadedForRef.current = userId
     setProfileLoading(true)
     const p = await fetchProfileSafe(userId)
     setProfile(p)
@@ -55,29 +63,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      async (_event, currentSession) => {
         if (!mounted) return
 
         setSession(currentSession)
         setUser(currentSession?.user ?? null)
 
         if (currentSession?.user) {
-          // TOKEN_REFRESHED only rotates the JWT — the profile hasn't changed.
-          // Re-fetching it on every refresh causes a full-screen spinner on the
-          // dashboard every time the browser tab regains focus.
-          if (event !== 'TOKEN_REFRESHED') {
-            await loadProfile(currentSession.user.id)
-          }
+          // loadProfile is a no-op if the profile is already loaded for this
+          // user ID — covers TOKEN_REFRESHED, duplicate SIGNED_IN on restore,
+          // and any other spurious auth events fired by Supabase on focus.
+          await loadProfile(currentSession.user.id)
         } else {
           setProfile(null)
+          profileLoadedForRef.current = null
         }
 
         if (mounted) setIsLoading(false)
       },
     )
 
-    // Hard failsafe: if onAuthStateChange never fires (extremely rare edge
-    // case), stop blocking after 12 seconds rather than hanging forever.
     const failsafe = setTimeout(() => {
       if (mounted) setIsLoading(false)
     }, 12_000)
@@ -94,11 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setSession(null)
     setProfile(null)
+    profileLoadedForRef.current = null
   }, [])
 
   const refreshProfile = useCallback(async () => {
     if (!user) return
-    await loadProfile(user.id)
+    await loadProfile(user.id, true) // force=true bypasses the "already loaded" guard
   }, [user, loadProfile])
 
   return (
