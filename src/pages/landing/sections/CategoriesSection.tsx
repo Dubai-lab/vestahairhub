@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { useQuery }     from '@tanstack/react-query'
+import { motion }       from 'framer-motion'
+import { ArrowRight }   from 'lucide-react'
+import { supabase }     from '@/lib/supabase'
 
 const CATEGORIES = [
   {
@@ -10,7 +12,6 @@ const CATEGORIES = [
     description: 'Natural hair, wigs, weaves, braids and extensions from authentic African sellers.',
     gradient:    'from-amber-900/60 via-brand-800/40 to-brand-900/60',
     glow:        'rgba(200,133,26,0.3)',
-    count:       '12,000+',
   },
   {
     name:        'Nails',
@@ -19,7 +20,6 @@ const CATEGORIES = [
     description: 'Press-on nails, nail art kits, gels, acrylics and all nail accessories.',
     gradient:    'from-pink-900/60 via-rose-800/30 to-brand-900/60',
     glow:        'rgba(236,72,153,0.25)',
-    count:       '8,500+',
   },
   {
     name:        'Hair Products',
@@ -28,7 +28,6 @@ const CATEGORIES = [
     description: 'Shea butter, hair oils, creams, relaxers and natural African hair care.',
     gradient:    'from-emerald-900/50 via-teal-800/30 to-brand-900/60',
     glow:        'rgba(52,211,153,0.2)',
-    count:       '5,200+',
   },
   {
     name:        'Eyelashes',
@@ -37,12 +36,27 @@ const CATEGORIES = [
     description: 'Mink lashes, synthetic lashes, lash glue, strips and full lash kits.',
     gradient:    'from-purple-900/50 via-violet-800/30 to-brand-900/60',
     glow:        'rgba(167,139,250,0.2)',
-    count:       '3,800+',
   },
 ]
 
 export function CategoriesSection() {
   const navigate = useNavigate()
+
+  const { data: countMap = {} } = useQuery<Record<string, number>>({
+    queryKey: ['landing-category-counts'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const [{ data: cats }, { data: prods }] = await Promise.all([
+        supabase.from('categories').select('id, slug').in('slug', ['hair', 'nails', 'hair-products', 'eyelashes']),
+        supabase.from('products').select('category_id').eq('status', 'active'),
+      ])
+      const map: Record<string, number> = {}
+      for (const cat of cats ?? []) {
+        map[cat.slug] = (prods ?? []).filter((p: any) => p.category_id === cat.id).length
+      }
+      return map
+    },
+  })
 
   return (
     <section id="categories" className="section relative z-10">
@@ -100,7 +114,7 @@ export function CategoriesSection() {
 
                 {/* Count badge */}
                 <span className="absolute top-4 right-4 text-xs text-white/40 font-medium">
-                  {cat.count} products
+                  {countMap[cat.slug] ?? '…'} products
                 </span>
 
                 {/* Content */}
