@@ -62,14 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null)
 
         if (currentSession?.user) {
-          await loadProfile(currentSession.user.id)
+          // TOKEN_REFRESHED only rotates the JWT — the profile hasn't changed.
+          // Re-fetching it on every refresh causes a full-screen spinner on the
+          // dashboard every time the browser tab regains focus.
+          if (event !== 'TOKEN_REFRESHED') {
+            await loadProfile(currentSession.user.id)
+          }
         } else {
           setProfile(null)
         }
 
-        // Set loading done after the very first event fires (INITIAL_SESSION
-        // or SIGNED_IN). Subsequent events (TOKEN_REFRESHED etc.) don't need
-        // to flip this back on.
         if (mounted) setIsLoading(false)
       },
     )

@@ -16,10 +16,13 @@ const Spinner = () => (
 export function RequireRole({ allowedRoles, redirectTo = '/' }: Props) {
   const { user, role, isLoading, profileLoading } = useAuth()
 
-  // Wait for initial auth check
-  if (isLoading || profileLoading) return <Spinner />
+  // Block only on initial auth check, not background profile refreshes
+  if (isLoading) return <Spinner />
 
-  // User is authenticated but profile hasn't resolved yet — wait instead of redirecting
+  // Show spinner during profile load only if we have no role yet (first load)
+  if (profileLoading && !role) return <Spinner />
+
+  // Profile loaded but role still null — wait rather than redirect
   if (user && !role) return <Spinner />
 
   if (!role || !allowedRoles.includes(role)) {
