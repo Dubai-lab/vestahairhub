@@ -22,8 +22,10 @@ export default function Overview() {
   const { user } = useAuth()
 
   const { data: shop } = useQuery({
-    queryKey: ['seller-shop', user?.id],
-    enabled:  !!user,
+    queryKey:            ['seller-shop', user?.id],
+    enabled:             !!user,
+    staleTime:           5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn:  async () => {
       const { data } = await supabase
         .from('shops')
@@ -34,16 +36,22 @@ export default function Overview() {
     },
   })
 
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats', shop?.id],
-    enabled:  !!shop,
+  const { data: stats, isLoading, isError, refetch } = useQuery({
+    queryKey:  ['dashboard-stats', shop?.id],
+    enabled:   !!shop,
+    staleTime: 5 * 60 * 1000,
     queryFn:  async () => {
-      const [{ count: products }, { count: orders }, { data: recentOrders }, { data: salesRows }] = await Promise.all([
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('shop_id', shop!.id),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('shop_id', shop!.id),
-        supabase.from('orders').select('*, order_items(*)').eq('shop_id', shop!.id).order('created_at', { ascending: false }).limit(5),
-        supabase.from('orders').select('total_amount').eq('shop_id', shop!.id).neq('status', 'cancelled'),
-      ])
+      const withTimeout = <T,>(p: Promise<T>): Promise<T> =>
+        Promise.race([p, new Promise<never>((_, r) => setTimeout(() => r(new Error('Request timed out')), 15_000))])
+
+      const [{ count: products }, { count: orders }, { data: recentOrders }, { data: salesRows }] = await withTimeout(
+        Promise.all([
+          supabase.from('products').select('*', { count: 'exact', head: true }).eq('shop_id', shop!.id),
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('shop_id', shop!.id),
+          supabase.from('orders').select('*, order_items(*)').eq('shop_id', shop!.id).order('created_at', { ascending: false }).limit(5),
+          supabase.from('orders').select('total_amount').eq('shop_id', shop!.id).neq('status', 'cancelled'),
+        ])
+      )
       const totalSales = (salesRows ?? []).reduce((sum, o) => sum + (o.total_amount ?? 0), 0)
       return { products: products ?? 0, orders: orders ?? 0, recentOrders: recentOrders ?? [], totalSales }
     },
@@ -67,8 +75,13 @@ export default function Overview() {
         </p>
       </div>
 
-      {isLoading ? (
+      {isLoading && !stats ? (
         <div className="flex items-center justify-center h-40"><Spinner size="lg" /></div>
+      ) : isError && !stats ? (
+        <div className="flex flex-col items-center justify-center h-40 gap-4">
+          <p className="text-white/40 text-sm">Failed to load dashboard data.</p>
+          <button type="button" onClick={() => refetch()} className="text-brand-400 text-sm underline underline-offset-2">Try again</button>
+        </div>
       ) : (
         <>
           {/* Stat cards */}
