@@ -1,12 +1,17 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { cartItemPrice } from '@/types'
 import type { CartItem, Product } from '@/types'
+
+function makeKey(productId: string, color: string | null, sizeName: string | null): string {
+  return `${productId}::${color ?? ''}::${sizeName ?? ''}`
+}
 
 interface CartState {
   items:       CartItem[]
-  addItem:     (product: Product, quantity?: number) => void
-  removeItem:  (productId: string) => void
-  updateQty:   (productId: string, quantity: number) => void
+  addItem:     (product: Product, quantity?: number, selectedColor?: string | null, selectedSize?: { name: string; price_add: number } | null) => void
+  removeItem:  (key: string) => void
+  updateQty:   (key: string, quantity: number) => void
   clearCart:   () => void
   totalItems:  () => number
   totalPrice:  () => number
@@ -17,38 +22,35 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product, quantity = 1) => {
+      addItem: (product, quantity = 1, selectedColor = null, selectedSize = null) => {
+        const key = makeKey(product.id, selectedColor, selectedSize?.name ?? null)
         set((state) => {
-          const existing = state.items.find((i) => i.product.id === product.id)
+          const existing = state.items.find((i) => i.key === key)
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.product.id === product.id
-                  ? { ...i, quantity: i.quantity + quantity }
-                  : i,
+                i.key === key ? { ...i, quantity: i.quantity + quantity } : i,
               ),
             }
           }
           return {
-            items: [...state.items, { product, quantity, shopId: product.shop_id }],
+            items: [...state.items, { key, product, quantity, shopId: product.shop_id, selectedColor, selectedSize }],
           }
         })
       },
 
-      removeItem: (productId) =>
+      removeItem: (key) =>
         set((state) => ({
-          items: state.items.filter((i) => i.product.id !== productId),
+          items: state.items.filter((i) => i.key !== key),
         })),
 
-      updateQty: (productId, quantity) => {
+      updateQty: (key, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(productId)
+          get().removeItem(key)
           return
         }
         set((state) => ({
-          items: state.items.map((i) =>
-            i.product.id === productId ? { ...i, quantity } : i,
-          ),
+          items: state.items.map((i) => i.key === key ? { ...i, quantity } : i),
         }))
       },
 
@@ -57,7 +59,7 @@ export const useCartStore = create<CartState>()(
       totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 
       totalPrice: () =>
-        get().items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
+        get().items.reduce((sum, i) => sum + cartItemPrice(i) * i.quantity, 0),
     }),
     {
       name:    'vestahairhub-cart',

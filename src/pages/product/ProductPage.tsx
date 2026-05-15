@@ -12,6 +12,8 @@ import { Spinner }         from '@/components/ui/Spinner'
 import { ReviewSection }   from '@/components/ui/ReviewSection'
 import type { Product }    from '@/types'
 
+type SizeVariant = { name: string; price_add: number }
+
 type MediaItem = { type: 'image'; src: string } | { type: 'video'; src: string }
 
 function buildMedia(images: string[], videoUrl: string | null): MediaItem[] {
@@ -121,10 +123,14 @@ function MediaViewer({ media }: { media: MediaItem[] }) {
 
 /* ── Product Page ──────────────────────────────────────────────────────────── */
 export default function ProductPage() {
-  const { id }  = useParams<{ id: string }>()
+  const { id }   = useParams<{ id: string }>()
   const navigate = useNavigate()
   const addItem  = useCartStore((s) => s.addItem)
   const [qty, setQty] = useState(1)
+
+  // Variant selections
+  const [selectedColor, setSelectedColor] = useState<string | null>(null)
+  const [selectedSize,  setSelectedSize]  = useState<SizeVariant | null>(null)
 
   const { data: ratingData } = useQuery({
     queryKey: ['product-rating', id],
@@ -168,10 +174,21 @@ export default function ProductPage() {
     </div>
   )
 
+  const colors = (product.colors as string[] | null) ?? []
+  const sizes  = (product.sizes  as SizeVariant[] | null) ?? []
+
   const media    = buildMedia(product.images ?? [], product.video_url ?? null)
   const discount = product.compare_price
     ? Math.round((1 - product.price / product.compare_price) * 100)
     : null
+
+  // Dynamic total = base price + selected size's extra price
+  const totalPrice = product.price + (selectedSize?.price_add ?? 0)
+
+  // Add to cart is disabled if there are variants the buyer hasn't chosen yet
+  const needsColor = colors.length > 0 && !selectedColor
+  const needsSize  = sizes.length  > 0 && !selectedSize
+  const canAddToCart = product.stock > 0 && !needsColor && !needsSize
 
   const waNumber = product.shops?.whatsapp_number?.replace(/[^0-9]/g, '')
   const waText   = encodeURIComponent(
@@ -222,9 +239,14 @@ export default function ProductPage() {
             </div>
           )}
 
-          {/* Price */}
+          {/* Price — updates dynamically when size selected */}
           <div className="flex items-baseline gap-3 flex-wrap">
-            <span className="text-4xl font-bold text-brand-400">{formatPrice(product.price, product.shops?.currency)}</span>
+            <span className="text-4xl font-bold text-brand-400">{formatPrice(totalPrice, product.shops?.currency)}</span>
+            {selectedSize && selectedSize.price_add > 0 && (
+              <span className="text-sm text-white/40">
+                Base {formatPrice(product.price, product.shops?.currency)} + {formatPrice(selectedSize.price_add, product.shops?.currency)} ({selectedSize.name})
+              </span>
+            )}
             {product.compare_price && (
               <>
                 <span className="text-white/30 text-xl line-through">{formatPrice(product.compare_price, product.shops?.currency)}</span>
@@ -246,6 +268,71 @@ export default function ProductPage() {
             <p className="text-white/55 leading-relaxed text-sm">{product.description}</p>
           )}
 
+          {/* ── Color swatches ── */}
+          {colors.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white/70">Color</span>
+                {selectedColor ? (
+                  <span className="text-xs text-white/40">{selectedColor}</span>
+                ) : (
+                  <span className="text-xs text-amber-400/80">— select a color</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {colors.map(hex => (
+                  <button
+                    key={hex}
+                    type="button"
+                    onClick={() => setSelectedColor(hex === selectedColor ? null : hex)}
+                    title={hex}
+                    className={`w-9 h-9 rounded-lg border-2 transition-all ${
+                      selectedColor === hex
+                        ? 'border-brand-400 scale-110 shadow-lg shadow-brand-400/30'
+                        : 'border-white/20 hover:border-white/50'
+                    }`}
+                    style={{ backgroundColor: hex }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Size grid ── */}
+          {sizes.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white/70">Size</span>
+                {selectedSize ? (
+                  <span className="text-xs text-white/40">{selectedSize.name}</span>
+                ) : (
+                  <span className="text-xs text-amber-400/80">— select a size</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map(s => (
+                  <button
+                    key={s.name}
+                    type="button"
+                    onClick={() => setSelectedSize(s.name === selectedSize?.name ? null : s)}
+                    className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                      selectedSize?.name === s.name
+                        ? 'bg-brand-500/20 border-brand-400 text-brand-400 scale-105'
+                        : 'bg-white/5 border-white/15 text-white/70 hover:border-white/40 hover:text-white'
+                    }`}
+                  >
+                    <span>{s.name}</span>
+                    {s.price_add > 0 && (
+                      <span className={`ml-1.5 text-xs ${selectedSize?.name === s.name ? 'text-brand-300' : 'text-white/40'}`}>
+                        +{formatPrice(s.price_add, product.shops?.currency)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Quantity selector */}
           {product.stock > 0 && (
             <div className="flex items-center gap-3">
@@ -264,11 +351,22 @@ export default function ProductPage() {
               size="lg"
               variant="primary"
               leftIcon={<ShoppingBag size={18} />}
-              disabled={product.stock === 0}
-              onClick={() => { for (let i = 0; i < qty; i++) addItem(product) }}
+              disabled={!canAddToCart}
+              onClick={() => {
+                for (let i = 0; i < qty; i++) {
+                  addItem(product, 1, selectedColor, selectedSize)
+                }
+              }}
               className="flex-1"
             >
-              Add to Cart
+              {product.stock === 0
+                ? 'Out of Stock'
+                : needsColor
+                  ? 'Select a Color'
+                  : needsSize
+                    ? 'Select a Size'
+                    : `Add to Cart · ${formatPrice(totalPrice, product.shops?.currency)}`
+              }
             </Button>
           </div>
 

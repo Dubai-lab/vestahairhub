@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Package, Edit2, Trash2, X, Video } from 'lucide-react'
+import { Plus, Package, Edit2, Trash2, X, Video, Palette, Ruler } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { supabase }   from '@/lib/supabase'
 import { useAuth }    from '@/context/AuthContext'
@@ -13,6 +13,8 @@ import { Badge }      from '@/components/ui/Badge'
 import { Spinner }    from '@/components/ui/Spinner'
 import { ProductMediaUploader } from '@/components/ui/ProductMediaUploader'
 import type { Product } from '@/types'
+
+type SizeVariant = { name: string; price_add: number }
 
 const schema = z.object({
   name:          z.string().min(2, 'Product name required'),
@@ -38,6 +40,16 @@ export default function Products() {
   const [editing,  setEditing]     = useState<Product | null>(null)
   const [mediaImages, setMediaImages] = useState<string[]>([])
   const [mediaVideo,  setMediaVideo]  = useState<string | null>(null)
+
+  // Color state
+  const [colorList,   setColorList]   = useState<string[]>([])
+  const [colorInput,  setColorInput]  = useState('#8B4513')
+  const colorInputRef = useRef<HTMLInputElement>(null)
+
+  // Size variants state
+  const [sizeList,    setSizeList]    = useState<SizeVariant[]>([])
+  const [sizeName,    setSizeName]    = useState('')
+  const [sizePriceAdd, setSizePriceAdd] = useState('')
 
   const { data: shop } = useQuery({
     queryKey: ['seller-shop', user?.id],
@@ -74,6 +86,11 @@ export default function Products() {
     setEditing(null)
     setMediaImages([])
     setMediaVideo(null)
+    setColorList([])
+    setColorInput('#8B4513')
+    setSizeList([])
+    setSizeName('')
+    setSizePriceAdd('')
     reset({ status: 'active', stock: 0 })
     setShowForm(true)
   }
@@ -82,6 +99,11 @@ export default function Products() {
     setEditing(p)
     setMediaImages(p.images ?? [])
     setMediaVideo(p.video_url ?? null)
+    setColorList((p.colors as string[] | null) ?? [])
+    setColorInput('#8B4513')
+    setSizeList((p.sizes as SizeVariant[] | null) ?? [])
+    setSizeName('')
+    setSizePriceAdd('')
     reset({
       name:          p.name,
       description:   p.description ?? '',
@@ -94,11 +116,41 @@ export default function Products() {
     setShowForm(true)
   }
 
+  const addColor = () => {
+    if (!colorList.includes(colorInput)) {
+      setColorList(prev => [...prev, colorInput])
+    }
+  }
+
+  const removeColor = (hex: string) => {
+    setColorList(prev => prev.filter(c => c !== hex))
+  }
+
+  const addSize = () => {
+    const name     = sizeName.trim()
+    const priceAdd = parseFloat(sizePriceAdd)
+    if (!name || isNaN(priceAdd) || priceAdd < 0) return
+    if (sizeList.some(s => s.name === name)) return
+    setSizeList(prev => [...prev, { name, price_add: priceAdd }])
+    setSizeName('')
+    setSizePriceAdd('')
+  }
+
+  const removeSize = (name: string) => {
+    setSizeList(prev => prev.filter(s => s.name !== name))
+  }
+
   const slugify = (s: string) => s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
   const saveProduct = useMutation({
     mutationFn: async (data: FormData) => {
-      const payload = { ...data, images: mediaImages, video_url: mediaVideo ?? null }
+      const payload = {
+        ...data,
+        images:    mediaImages,
+        video_url: mediaVideo ?? null,
+        colors:    colorList.length   > 0 ? colorList : [],
+        sizes:     sizeList.length    > 0 ? sizeList  : [],
+      }
       if (editing) {
         await supabase.from('products').update(payload).eq('id', editing.id)
       } else {
@@ -186,9 +238,127 @@ export default function Products() {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <Input {...register('price')}         label="Price (₦)" type="number" step="0.01" min="0" placeholder="0.00" error={errors.price?.message} />
+                <Input {...register('price')}         label="Base price" type="number" step="0.01" min="0" placeholder="0.00" error={errors.price?.message} />
                 <Input {...register('compare_price')} label="Old price (optional)" type="number" step="0.01" min="0" placeholder="0.00" />
                 <Input {...register('stock')}         label="Stock qty" type="number" min="0" placeholder="0" error={errors.stock?.message} />
+              </div>
+
+              {/* ── Color swatches ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Palette size={15} className="text-brand-400" />
+                  <span className="text-sm font-medium text-white/70">Hair Colors</span>
+                  <span className="text-xs text-white/30">(optional — add each color available)</span>
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  {colorList.map(hex => (
+                    <div key={hex} className="relative group">
+                      <div
+                        className="w-9 h-9 rounded-lg border-2 border-white/20 cursor-default"
+                        style={{ backgroundColor: hex }}
+                        title={hex}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeColor(hex)}
+                        className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Color picker trigger */}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-9 h-9 rounded-lg border-2 border-dashed border-white/20 cursor-pointer relative overflow-hidden hover:border-brand-500 transition-colors"
+                      style={{ backgroundColor: colorInput }}
+                      onClick={() => colorInputRef.current?.click()}
+                      title="Pick color"
+                    >
+                      <input
+                        ref={colorInputRef}
+                        type="color"
+                        value={colorInput}
+                        onChange={e => setColorInput(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addColor}
+                      className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 border border-brand-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                    >
+                      <Plus size={12} /> Add color
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Size variants ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Ruler size={15} className="text-brand-400" />
+                  <span className="text-sm font-medium text-white/70">Size Variants</span>
+                  <span className="text-xs text-white/30">(optional — each size can have an extra price)</span>
+                </div>
+
+                {/* Existing sizes */}
+                {sizeList.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {sizeList.map(s => (
+                      <div key={s.name} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                        <span className="text-sm font-medium text-white">{s.name}</span>
+                        {s.price_add > 0 && (
+                          <span className="text-xs text-brand-400">+{s.price_add}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeSize(s.name)}
+                          className="text-white/30 hover:text-red-400 transition-colors ml-1"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add size row */}
+                <div className="flex items-end gap-3">
+                  <div className="flex-1 space-y-1.5">
+                    <label className="text-xs text-white/50">Size name</label>
+                    <input
+                      type="text"
+                      value={sizeName}
+                      onChange={e => setSizeName(e.target.value)}
+                      placeholder='e.g. 16 inch'
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSize() } }}
+                    />
+                  </div>
+                  <div className="w-36 space-y-1.5">
+                    <label className="text-xs text-white/50">Extra price (+)</label>
+                    <input
+                      type="number"
+                      value={sizePriceAdd}
+                      onChange={e => setSizePriceAdd(e.target.value)}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSize() } }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addSize}
+                    className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 border border-brand-500/30 rounded-xl px-3 py-2 transition-colors whitespace-nowrap"
+                  >
+                    <Plus size={12} /> Add size
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -224,7 +394,9 @@ export default function Products() {
         <div className="glass-dark rounded-2xl overflow-hidden">
           <div className="divide-y divide-white/5">
             {products.map((p) => {
-              const badge = STATUS_BADGE[p.status as keyof typeof STATUS_BADGE] ?? STATUS_BADGE.draft
+              const badge    = STATUS_BADGE[p.status as keyof typeof STATUS_BADGE] ?? STATUS_BADGE.draft
+              const colors   = (p.colors as string[] | null) ?? []
+              const sizes    = (p.sizes  as SizeVariant[] | null) ?? []
               return (
                 <div key={p.id} className="flex items-center gap-4 px-6 py-4">
                   <div className="w-14 h-14 rounded-xl bg-brand-900/40 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
@@ -234,7 +406,7 @@ export default function Products() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-white truncate">{p.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <p className="text-xs text-white/40">Stock: {p.stock}</p>
                       {(p.images?.length ?? 0) > 0 && (
                         <span className="text-xs text-white/25">{p.images.length} photo{p.images.length !== 1 ? 's' : ''}</span>
@@ -243,6 +415,19 @@ export default function Products() {
                         <span className="flex items-center gap-0.5 text-xs text-brand-500/60">
                           <Video size={10} /> video
                         </span>
+                      )}
+                      {/* Color dots */}
+                      {colors.length > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          {colors.slice(0, 5).map(hex => (
+                            <span key={hex} className="w-3 h-3 rounded-full border border-white/20 inline-block" style={{ backgroundColor: hex }} />
+                          ))}
+                          {colors.length > 5 && <span className="text-xs text-white/25">+{colors.length - 5}</span>}
+                        </span>
+                      )}
+                      {/* Size count */}
+                      {sizes.length > 0 && (
+                        <span className="text-xs text-white/25">{sizes.length} size{sizes.length !== 1 ? 's' : ''}</span>
                       )}
                     </div>
                   </div>

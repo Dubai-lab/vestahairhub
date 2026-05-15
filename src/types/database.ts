@@ -174,6 +174,8 @@ export type Database = {
           stock:         number
           images:        string[]
           video_url:     string | null
+          colors:        string[] | null
+          sizes:         { name: string; price_add: number }[] | null
           tags:          string[]
           status:        string
           created_at:    string
@@ -191,6 +193,8 @@ export type Database = {
           stock?:         number
           images?:        string[]
           video_url?:     string | null
+          colors?:        string[] | null
+          sizes?:         { name: string; price_add: number }[] | null
           tags?:          string[]
           status?:        string
           created_at?:    string
@@ -206,6 +210,8 @@ export type Database = {
           stock?:         number
           images?:        string[]
           video_url?:     string | null
+          colors?:        string[] | null
+          sizes?:         { name: string; price_add: number }[] | null
           tags?:          string[]
           status?:        string
           updated_at?:    string

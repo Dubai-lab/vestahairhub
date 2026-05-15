@@ -8,6 +8,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase }          from '@/lib/supabase'
 import { useAuth }           from '@/context/AuthContext'
 import { useCartStore }      from '@/store/cartStore'
+import { cartItemPrice }     from '@/types'
 import { sendNotification }  from '@/lib/notify'
 import { Button }        from '@/components/ui/Button'
 import { Input }         from '@/components/ui/Input'
@@ -100,7 +101,7 @@ export default function CheckoutPage() {
           product_name:  i.product.name,
           product_image: i.product.images?.[0] ?? null,
           quantity:      i.quantity,
-          unit_price:    i.product.price,
+          unit_price:    cartItemPrice(i),
         })),
       )
 

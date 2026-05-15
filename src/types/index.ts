@@ -27,7 +27,14 @@ export type PaymentMethodType = 'mtn_momo' | 'opay' | 'bank_transfer'
 import type { ProductRow } from './database'
 
 export interface CartItem {
-  product:  ProductRow
-  quantity: number
-  shopId:   string
+  key:           string
+  product:       ProductRow
+  quantity:      number
+  shopId:        string
+  selectedColor: string | null
+  selectedSize:  { name: string; price_add: number } | null
+}
+
+export function cartItemPrice(item: CartItem): number {
+  return item.product.price + (item.selectedSize?.price_add ?? 0)
 }

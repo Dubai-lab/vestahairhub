@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useCartStore } from '@/store/cartStore'
 import { useAuth }      from '@/context/AuthContext'
 import { Button }       from '@/components/ui/Button'
+import { cartItemPrice } from '@/types'
+import { formatPrice }  from '@/lib/currencies'
 
 export default function CartPage() {
   const { items, removeItem, updateQty, totalPrice } = useCartStore()
@@ -14,6 +16,8 @@ export default function CartPage() {
     if (!user) { navigate('/auth/login', { state: { from: { pathname: '/checkout' } } }); return }
     navigate('/checkout')
   }
+
+  const currency = items[0]?.product.shop_id ? undefined : undefined
 
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
@@ -30,44 +34,61 @@ export default function CartPage() {
           {/* Items */}
           <div className="lg:col-span-2 space-y-3">
             <AnimatePresence>
-              {items.map((item) => (
-                <motion.div
-                  key={item.product.id}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{   opacity: 0, x: -20, height: 0 }}
-                  className="glass-dark rounded-2xl p-4 flex items-center gap-4"
-                >
-                  <Link to={`/product/${item.product.id}`} className="w-16 h-16 rounded-xl bg-brand-900/40 flex items-center justify-center text-3xl shrink-0 overflow-hidden">
-                    {item.product.images?.[0] ? <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" /> : '📦'}
-                  </Link>
-
-                  <div className="flex-1 min-w-0">
-                    <Link to={`/product/${item.product.id}`} className="font-medium text-white hover:text-brand-400 transition-colors truncate block">
-                      {item.product.name}
+              {items.map((item) => {
+                const unitPrice = cartItemPrice(item)
+                return (
+                  <motion.div
+                    key={item.key}
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{   opacity: 0, x: -20, height: 0 }}
+                    className="glass-dark rounded-2xl p-4 flex items-center gap-4"
+                  >
+                    <Link to={`/product/${item.product.id}`} className="w-16 h-16 rounded-xl bg-brand-900/40 flex items-center justify-center text-3xl shrink-0 overflow-hidden">
+                      {item.product.images?.[0] ? <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" /> : '📦'}
                     </Link>
-                    <p className="text-brand-400 font-bold mt-1">₦{item.product.price.toLocaleString()}</p>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => updateQty(item.product.id, item.quantity - 1)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-white/60 hover:text-white border border-white/10">
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-8 text-center text-white font-medium">{item.quantity}</span>
-                    <button onClick={() => updateQty(item.product.id, item.quantity + 1)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-white/60 hover:text-white border border-white/10">
-                      <Plus size={14} />
-                    </button>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/product/${item.product.id}`} className="font-medium text-white hover:text-brand-400 transition-colors truncate block">
+                        {item.product.name}
+                      </Link>
+                      {/* Variant tags */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {item.selectedColor && (
+                          <span className="flex items-center gap-1 text-xs text-white/50 bg-white/5 rounded-full px-2 py-0.5">
+                            <span className="w-3 h-3 rounded-full border border-white/20 inline-block shrink-0" style={{ backgroundColor: item.selectedColor }} />
+                            {item.selectedColor}
+                          </span>
+                        )}
+                        {item.selectedSize && (
+                          <span className="text-xs text-white/50 bg-white/5 rounded-full px-2 py-0.5">
+                            {item.selectedSize.name}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-brand-400 font-bold mt-1">₦{unitPrice.toLocaleString()}</p>
+                    </div>
 
-                  <div className="text-right">
-                    <p className="font-bold text-white">₦{(item.product.price * item.quantity).toLocaleString()}</p>
-                    <button onClick={() => removeItem(item.product.id)} className="text-white/30 hover:text-red-400 transition-colors mt-1">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => updateQty(item.key, item.quantity - 1)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-white/60 hover:text-white border border-white/10">
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-8 text-center text-white font-medium">{item.quantity}</span>
+                      <button type="button" onClick={() => updateQty(item.key, item.quantity + 1)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-white/60 hover:text-white border border-white/10">
+                        <Plus size={14} />
+                      </button>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-bold text-white">₦{(unitPrice * item.quantity).toLocaleString()}</p>
+                      <button type="button" onClick={() => removeItem(item.key)} className="text-white/30 hover:text-red-400 transition-colors mt-1">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </AnimatePresence>
           </div>
 
